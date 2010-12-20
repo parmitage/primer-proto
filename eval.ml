@@ -1,13 +1,9 @@
 (* TODO / NOTE
-   - Closure type ctor should take a list of expressions as 1st parameter
-   - Apply type ctor should take a list of expressions as 2nd parameter
    - Association list for bindings / environments?
    - Put take_while in a utils module? In its own file?
    - Environment.lookup is inefficient as it does a double scan of the environment
    - Nicer marker for environment frames
    - Move modules into separate files
-   - Apply case in eval needs to evaluate its arguments
-   - apply needs to bind arguments
    - apply needs to evaluate where clause
    - evlis is inefficient - doesn't need to evaluate all lists
 *)
@@ -22,8 +18,8 @@ type expression =
   | Float of float
   | Char of char
   | List of expression list
-  | Closure of expression * expression * expression * binding list
-  | Apply of expression * expression
+  | Closure of expression list * expression * expression * binding list
+  | Apply of expression * expression list
   | Add of expression * expression
 and binding = { symbol: string; value: expression; }
 
@@ -65,6 +61,8 @@ struct
     then raise Already_bound
     else {symbol = s; value = v} :: e
   let create env = {symbol = "env"; value = Int(-1)} :: env
+  let bind p a e =
+    List.append (List.map2 (fun (Symbol s) a -> {symbol = s; value = a}) p a) e
 end
 
 module Operators =
@@ -87,15 +85,15 @@ let rec eval exp env =
     | Char c -> exp
     | List l -> List(evlis l env)
     | Closure(args, body, where, env) -> exp
-    | Apply(s, a) -> apply s a env
+    | Apply(s, a) -> apply s (evlis a env) env
     | Add(lhs, rhs) -> Operators.add (eval lhs env) (eval rhs env)
 and apply sym args e =
   match sym with
       Symbol s ->
         let f = Environment.lookup s e in
         begin match f with
-            Closure(a, b, w, ce) ->
-              eval b (Environment.create ce)
+            Closure(p, b, w, ce) ->
+              eval b (Environment.bind p args (Environment.create ce))
           | _ -> raise Type_mismatch
         end
     | _ -> raise Type_mismatch
@@ -103,15 +101,17 @@ and evlis lst env =
   List.map (fun exp -> eval exp env) lst
 
 (* test program *)
-let x = { symbol = "x"; value = Int(12) } ;;
+let x = { symbol = "x"; value = Int(400) } ;;
 let y = { symbol = "y"; value = Float(3.14) } ;;
 
 (* TODO try adding symbols *)
-let body = Add(Int(14), Int(12)) ;;
-let func = Closure(Symbol("x"), body, Symbol("a"), []) ;;
+let body = Add(Symbol("x"), Int(12)) ;;
+let func = Closure(Symbol("x") :: [], body, Symbol("a"), []) ;;
 let f1 = { symbol = "f1"; value = func } ;;
-let a = Apply(Symbol("f1"), Int(12)) ;;
+let a = Apply(Symbol("f1"), Symbol("x") :: []) ;;
 
 let e = f1 :: x :: y :: [] ;;
 let result = eval a e ;;
 pprint(result) ;;
+
+Environment.bind (Symbol("x") :: Symbol("y") :: []) (Int(2) :: Float(1.2) :: []) e
