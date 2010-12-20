@@ -8,8 +8,10 @@ type expression =
   | Float of float
   | Char of char
   | Pair of expression * expression
+  (* TODO Closure should take a list of expressions as 1st parameter *)
   | Closure of expression * expression * expression * binding list
-  | Apply of expression * expression                   (* TODO should take a list of expressions *)
+  (* TODO Apply should take a list of expressions as 2nd parameter *)
+  | Apply of expression * expression
   | Add of expression * expression
 and binding = { symbol: string; value: expression; }   (* TODO could use association lists? *)
 
@@ -73,6 +75,14 @@ let environment_extend e s v =
 (* TODO should be a nicer marker for environments than this *)
 let environment_new env = {symbol = "env"; value = Int(-1)} :: env
 
+let add lhs rhs =
+  match lhs, rhs with
+      Int x, Int y -> Int(x + y)
+    | Int x, Float y -> Float(float_of_int x +. y)
+    | Float x, Int y -> Float(x +. float_of_int y)
+    | Float x, Float y -> Float(x +. y)
+    | _ -> raise Type_mismatch
+
 (* evaluate an expression in an environment  *)
 let rec eval exp env =
   match exp with
@@ -82,17 +92,17 @@ let rec eval exp env =
     | Char c -> exp
     | Pair(car, cdr) -> exp                    (* TODO need to implement evlis *)
     | Closure(args, body, where, env) -> exp
-    | Apply(s, a) -> apply s a env      
-    | Add(Int lhs, Int rhs) -> Int(lhs + rhs)
-    | Add(Float lhs, Float rhs) -> Float(lhs +. rhs)
-    | Add(_, _) -> raise Type_mismatch         (* TODO add should take any expression *)
+    | Apply(s, a) -> apply s a env             (* TODO need to evaluate arguments *)
+    | Add(lhs, rhs) -> add (eval lhs env) (eval rhs env)
 and apply sym args e =
   match sym with
       Symbol s ->
         let f = environment_lookup s e in
         begin match f with
+            (* TODO need to bind arguments *)
+            (* TODO need to evaluate where clause *)
             Closure(a, b, w, ce) ->
-              eval b (environment_new ce)      (* TODO no binding happens here *)
+              eval b (environment_new ce)
           | _ -> raise Type_mismatch
         end
     | _ -> raise Type_mismatch
@@ -101,6 +111,7 @@ and apply sym args e =
 let x = { symbol = "x"; value = Int(12) } ;;
 let y = { symbol = "y"; value = Float(3.14) } ;;
 
+(* TODO try adding symbols *)
 let body = Add(Int(14), Int(12)) ;;
 let func = Closure(Symbol("x"), body, Symbol("a"), []) ;;
 let f1 = { symbol = "f1"; value = func } ;;
