@@ -1,3 +1,17 @@
+(* TODO
+   - Closure type ctor should take a list of expressions as 1st parameter
+   - Apply type ctor should take a list of expressions as 2nd parameter
+   - Association list for bindings / environments?
+   - Put take_while in a utils module? In its own file?
+   - Should all environment related functions go into a module?
+   - environment_lookup is inefficient as it does a double scan of the environment
+   - Nicer marker for environment frames
+   - Apply case in eval needs to evaluate its arguments
+   - apply needs to bind arguments
+   - apply needs to evaluate where clause
+   - evlis is inefficient - doesn't need to evaluate all lists
+*)
+
 exception Type_mismatch
 exception Unbound_symbol
 exception Already_bound
@@ -7,13 +21,11 @@ type expression =
   | Int of int
   | Float of float
   | Char of char
-  | Pair of expression * expression
-  (* TODO Closure should take a list of expressions as 1st parameter *)
+  | List of expression list
   | Closure of expression * expression * expression * binding list
-  (* TODO Apply should take a list of expressions as 2nd parameter *)
   | Apply of expression * expression
   | Add of expression * expression
-and binding = { symbol: string; value: expression; }   (* TODO could use association lists? *)
+and binding = { symbol: string; value: expression; }
 
 (* pretty printer *)
 let rec pprint exp =
@@ -22,25 +34,14 @@ let rec pprint exp =
     | Int i -> print_int i; exp
     | Float f -> print_float f; exp
     | Char c -> print_char c; exp
-    | Pair(car, cdr) ->
-      print_string "[";
-      pprint car;           (* TODO generates a type warning *)
-      print_string ",";
-      pprint cdr;           (* TODO generates a type warning *)
-      print_string "]";
-      exp
+    | List l -> exp
     | Closure(args, body, where, env) -> print_string "#<closure>"; exp
     | Add(lhs, rhs) -> print_string "#<operator>"; exp
     | Apply(s, a) -> print_string "#<funcall>"; exp
 
-(* TODO can take_while go in a utils module? Can modules live in other files? *)
 let rec take_while p lst = match lst with 
   | [] -> []
   | x::xs -> if p x then x :: (take_while p xs) else []
-
-(* TODO should all environment related functions go into a module?
-   Where does the definition of a binding then go (i.e. does
-   a type have to live with the functions that operate on it?) *)
 
 (* is a symbol represented by this binding *)
 let symbol_eq sym bind = match bind with {symbol; value} -> symbol = sym
@@ -55,7 +56,7 @@ let symbol_bound sym env =
 
 (* return the value bound to a symbol in an environment *)
 let environment_lookup sym env =
-  if symbol_bound sym env          (* TODO inefficient - double scan of the list *)
+  if symbol_bound sym env
   then match List.find (symbol_eq sym) env with
       {symbol; value} -> value
   else raise Unbound_symbol
@@ -72,7 +73,7 @@ let environment_extend e s v =
   then raise Already_bound
   else {symbol = s; value = v} :: e
 
-(* TODO should be a nicer marker for environments than this *)
+(* add an environment marker to an existing environment *)
 let environment_new env = {symbol = "env"; value = Int(-1)} :: env
 
 let add lhs rhs =
@@ -90,22 +91,22 @@ let rec eval exp env =
     | Int i -> exp
     | Float f -> exp
     | Char c -> exp
-    | Pair(car, cdr) -> exp                    (* TODO need to implement evlis *)
+    | List l -> List(evlis l env)
     | Closure(args, body, where, env) -> exp
-    | Apply(s, a) -> apply s a env             (* TODO need to evaluate arguments *)
+    | Apply(s, a) -> apply s a env
     | Add(lhs, rhs) -> add (eval lhs env) (eval rhs env)
 and apply sym args e =
   match sym with
       Symbol s ->
         let f = environment_lookup s e in
         begin match f with
-            (* TODO need to bind arguments *)
-            (* TODO need to evaluate where clause *)
             Closure(a, b, w, ce) ->
               eval b (environment_new ce)
           | _ -> raise Type_mismatch
         end
     | _ -> raise Type_mismatch
+and evlis lst env =
+  List.map (fun exp -> eval exp env) lst
 
 (* test program *)
 let x = { symbol = "x"; value = Int(12) } ;;
