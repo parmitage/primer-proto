@@ -1,0 +1,5 @@
+primer
+*.cm[io]
+*~
+*.DS_Store
+*._d
