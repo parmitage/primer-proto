@@ -4,7 +4,6 @@
    - Nicer marker for environment frames
    - evlis is inefficient - doesn't need to evaluate all lists
    - lambda
-   - equal
    - car, cdr, cons, append
    - strings
    - proper printer
@@ -20,6 +19,7 @@ type expression =
   | Int of int
   | Float of float
   | Char of char
+  | Bool of bool
   | List of expression list
   | Closure of expression list * expression * definition list * definition list
   | Apply of expression * expression list
@@ -27,21 +27,24 @@ type expression =
   | Sub of expression * expression
   | Mul of expression * expression
   | Div of expression * expression
+  | Equal of expression * expression
 and definition = Def of expression * expression
 
 let rec pprint exp =
   match exp with
-      Symbol s -> print_string s; exp
-    | Int i -> print_int i; exp
-    | Float f -> print_float f; exp
-    | Char c -> print_char c; exp
+      Symbol s -> Format.print_string s; exp
+    | Int i -> Format.print_int i; exp
+    | Float f -> Format.print_float f; exp
+    | Char c -> Format.print_char c; exp
+    | Bool b -> Format.print_bool b; exp
     | List l -> exp
-    | Closure(p, b, w, e) -> print_string "#<closure>"; exp
-    | Add(x, y) -> print_string "#<operator>"; exp
-    | Sub(x, y) -> print_string "#<operator>"; exp
-    | Mul(x, y) -> print_string "#<operator>"; exp
-    | Div(x, y) -> print_string "#<operator>"; exp
-    | Apply(s, a) -> print_string "#<funcall>"; exp
+    | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
+    | Add(x, y) -> Format.print_string "#<operator>"; exp
+    | Sub(x, y) -> Format.print_string "#<operator>"; exp
+    | Mul(x, y) -> Format.print_string "#<operator>"; exp
+    | Div(x, y) -> Format.print_string "#<operator>"; exp
+    | Equal(x, y) -> Format.print_string "#<operator>"; exp
+    | Apply(s, a) -> Format.print_string "#<funcall>"; exp
 
 let rec take_while p lst = match lst with 
   | [] -> []
@@ -99,6 +102,16 @@ struct
       | Float x, Int y -> Float(x /. float_of_int y)
       | Float x, Float y -> Float(x /. y)
       | _ -> raise Type_mismatch
+  let equal lhs rhs =
+    match lhs, rhs with
+        Int x, Int y -> Bool(x == y)
+      | Float x, Float y -> Bool(x == y)
+      | Int x, Float y -> Bool(float_of_int x == y)
+      | Float x, Int y -> Bool(x == float_of_int y)
+      | Char x, Char y -> Bool(x == y)
+      | Bool x, Bool y -> Bool(x == y)
+      | Symbol x, Symbol y -> Bool(x == y)
+      | _, _ -> Bool(false)
 end
 
 let rec eval exp env =
@@ -107,6 +120,7 @@ let rec eval exp env =
     | Int i -> exp
     | Float f -> exp
     | Char c -> exp
+    | Bool b -> exp
     | List l -> List(evlis l env)
     | Closure(args, body, where, env) -> exp
     | Apply(s, a) -> apply s (evlis a env) env
@@ -114,6 +128,7 @@ let rec eval exp env =
     | Sub(lhs, rhs) -> Operator.sub (eval lhs env) (eval rhs env)
     | Mul(lhs, rhs) -> Operator.mul (eval lhs env) (eval rhs env)
     | Div(lhs, rhs) -> Operator.div (eval lhs env) (eval rhs env)
+    | Equal(lhs, rhs) -> Operator.equal (eval lhs env) (eval rhs env)
 and apply sym args e =
   match sym with
       Symbol s ->
@@ -140,11 +155,11 @@ and evlis lst env = List.map (fun exp -> eval exp env) lst
 let x = Def(Symbol("x"), Int(400)) ;;
 let y = Def(Symbol("y"), Float(3.14)) ;;
 
-let body = Mul(Symbol("x"), Symbol("z")) ;;
+let body = Equal(Symbol("x"), Symbol("z")) ;;
 let where = Def(Symbol("z"), Int(4)) :: [] ;;
 let func = Closure(Symbol("x") :: [], body, where, []) ;;
 let f1 = Def(Symbol("f1"), func) ;;
-let a = Apply(Symbol("f1"), Symbol("y") :: []) ;;
+let a = Apply(Symbol("f1"), Symbol("x") :: []) ;;
 
 let e = f1 :: x :: y :: [] ;;
 let result = eval a e ;;
