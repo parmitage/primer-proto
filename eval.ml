@@ -2,14 +2,18 @@
    - Better matching for symbols and definitions (symbol_eq isn't really symbol equality)
    - Environment.lookup is inefficient as it does a double scan of the environment
    - Nicer marker for environment frames
-   - apply needs to intern definitions in where clause
    - evlis is inefficient - doesn't need to evaluate all lists
-   - Does OCaml intern strings or should I intern symbols?
+   - lambda
+   - equal
+   - car, cdr, cons, append
+   - strings
+   - proper printer
+   - Does OCaml intern strings or should I (for symbols)?
 *)
 
 exception Type_mismatch
 exception Unbound_symbol
-exception Already_bound
+exception Attempted_redefinition
 
 type expression =
     Symbol of string
@@ -50,12 +54,7 @@ struct
         Def(s, v) -> match s, sym with
             Symbol str1, Symbol str2 -> str1 = str2
           | _ -> raise Type_mismatch
-  let symbol_bound sym env = 
-    try
-      match List.find (symbol_eq sym) env with
-          Def(s, v) -> true
-    with
-        Not_found -> false
+  let symbol_bound sym env = List.exists (symbol_eq sym) env
   let lookup sym env =
     if symbol_bound sym env
     then match List.find (symbol_eq sym) env with Def(s, v) -> v
@@ -66,15 +65,8 @@ struct
           Def(s, v) -> match s with
               Symbol str -> str <> "env"
             | _ -> raise Type_mismatch) env
-  let extend e s v =
-    let current = top e in
-    let bound = symbol_bound s current in
-    if bound
-    then raise Already_bound
-    else Def(s, v) :: e
   let create env = Def(Symbol "env", Int(-1)) :: env
-  let bind p a e =
-    List.append (List.map2 (fun sym a -> Def(sym, a)) p a) e
+  let bind p a e = List.append (List.map2 (fun sym a -> Def(sym, a)) p a) e
 end
 
 module Operator =
@@ -128,7 +120,7 @@ and apply sym args e =
         let f = Environment.lookup sym e in
         begin match f with
             Closure(p, b, w, ce) ->
-              eval b (Environment.bind p args (Environment.create ce))
+              eval b (Environment.bind p args (List.append w (Environment.create ce)))
           | _ -> raise Type_mismatch
         end
     | _ -> raise Type_mismatch
@@ -148,8 +140,9 @@ and evlis lst env = List.map (fun exp -> eval exp env) lst
 let x = Def(Symbol("x"), Int(400)) ;;
 let y = Def(Symbol("y"), Float(3.14)) ;;
 
-let body = Mul(Symbol("x"), Int(12)) ;;
-let func = Closure(Symbol("x") :: [], body, [], []) ;;
+let body = Mul(Symbol("x"), Symbol("z")) ;;
+let where = Def(Symbol("z"), Int(4)) :: [] ;;
+let func = Closure(Symbol("x") :: [], body, where, []) ;;
 let f1 = Def(Symbol("f1"), func) ;;
 let a = Apply(Symbol("f1"), Symbol("y") :: []) ;;
 
