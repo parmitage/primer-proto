@@ -3,7 +3,6 @@
    - Environment.lookup is inefficient as it does a double scan of the environment
    - Nicer marker for environment frames
    - evlis is inefficient - doesn't need to evaluate all lists
-   - lambda
    - car, cdr, cons, append
    - strings
    - proper printer
@@ -21,6 +20,7 @@ type expression =
   | Char of char
   | Bool of bool
   | List of expression list
+  | Lambda of expression list * expression * definition list
   | Closure of expression list * expression * definition list * definition list
   | Apply of expression * expression list
   | Add of expression * expression
@@ -38,6 +38,7 @@ let rec pprint exp =
     | Char c -> Format.print_char c; exp
     | Bool b -> Format.print_bool b; exp
     | List l -> exp
+    | Lambda(p, b, w) -> Format.print_string "#<lambda>"; exp
     | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
     | Add(x, y) -> Format.print_string "#<operator>"; exp
     | Sub(x, y) -> Format.print_string "#<operator>"; exp
@@ -122,7 +123,8 @@ let rec eval exp env =
     | Char c -> exp
     | Bool b -> exp
     | List l -> List(evlis l env)
-    | Closure(args, body, where, env) -> exp
+    | Lambda(p, b, w) -> Closure(p, b, w, env)
+    | Closure(p, b, w, e) -> exp
     | Apply(s, a) -> apply s (evlis a env) env
     | Add(lhs, rhs) -> Operator.add (eval lhs env) (eval rhs env)
     | Sub(lhs, rhs) -> Operator.sub (eval lhs env) (eval rhs env)
