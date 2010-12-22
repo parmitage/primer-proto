@@ -12,7 +12,6 @@
    - loadlib
    - error
    - proper printer
-   - bitwise ops
    - symbol interning (or will OCaml do it?)
    - newline, tab
    - rnd
@@ -27,7 +26,8 @@ exception Unbound_symbol
 exception Attempted_redefinition
 
 type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or
-type uniop = Not | Neg
+type uniop = Not | Neg | BNot
+type bitop = Band | Bor | Xor | LShift | RShift
 
 type expression =
     Symbol of string
@@ -41,6 +41,7 @@ type expression =
   | Apply of expression * expression list
   | BinOp of binop * expression * expression
   | UniOp of uniop * expression
+  | BitOp of bitop * expression * expression
 and definition = Def of expression * expression
 
 let rec pprint exp =
@@ -55,6 +56,7 @@ let rec pprint exp =
     | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
     | BinOp(o, x, y) -> Format.print_string "#<binop>"; exp
     | UniOp(o, x) -> Format.print_string "#<uniop>"; exp
+    | BitOp(o, x, y) -> Format.print_string "#<bitop>"; exp
     | Apply(s, a) -> Format.print_string "#<funcall>"; exp
 
 let rec take_while p lst = match lst with 
@@ -88,6 +90,7 @@ let unary_op oper arg =
       Not, Bool x -> Bool(not x)
     | Neg, Int x -> Int(-x)
     | Neg, Float x -> Float(-1.0 *. x)
+    | BNot, Int x -> Int(lnot x)
     | _ -> raise Type_mismatch
 
 let binary_op oper lhs rhs =
@@ -145,6 +148,15 @@ let binary_op oper lhs rhs =
     | Or, Bool x, Bool y -> Bool(x || y)
     | _ -> raise Type_mismatch
 
+let bitwise_op oper lhs rhs =
+  match oper, lhs, rhs with
+      Band, Int x, Int y -> Int(x land y)
+    | Bor, Int x, Int y -> Int(x lor y)
+    | Xor, Int x, Int y -> Int(x lxor y)
+    | LShift, Int x, Int y -> Int(x lsl y)
+    | RShift, Int x, Int y -> Int(x lsr y)
+    | _ -> raise Type_mismatch
+
 let rec eval exp env =
   match exp with
       Symbol s -> Environment.lookup exp env
@@ -158,6 +170,7 @@ let rec eval exp env =
     | Apply(s, a) -> apply s (evlis a env) env
     | UniOp(o, arg) -> unary_op o (eval arg env)
     | BinOp(o, lhs, rhs) -> binary_op o (eval lhs env) (eval rhs env)
+    | BitOp(o, lhs, rhs) -> bitwise_op o (eval lhs env) (eval rhs env)
 and apply sym args e =
   match sym with
       Symbol s ->
