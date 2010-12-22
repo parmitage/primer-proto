@@ -1,7 +1,7 @@
 (* TODO
-   - lexer / parser
+   - lexer
+   - parser
    - car, cdr, cons, append
-   - if
    - strings
    - length
    - at
@@ -15,6 +15,7 @@
    - symbol interning (or will OCaml do it?)
    - newline, tab
    - rnd
+   - will tail calls be eliminated in apply/condition?
    - Better matching for symbols and definitions (symbol_eq isn't really symbol equality)
    - Environment.lookup is inefficient as it does a double scan of the environment
    - Nicer marker for environment frames
@@ -26,7 +27,7 @@ exception Unbound_symbol
 exception Attempted_redefinition
 
 type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or
-type uniop = Not | Neg | BNot
+type uniop = Not | Neg | Bnot
 type bitop = Band | Bor | Xor | LShift | RShift
 
 type expression =
@@ -36,6 +37,7 @@ type expression =
   | Char of char
   | Bool of bool
   | List of expression list
+  | If of expression * expression * expression
   | Lambda of expression list * expression * definition list
   | Closure of expression list * expression * definition list * definition list
   | Apply of expression * expression list
@@ -52,6 +54,7 @@ let rec pprint exp =
     | Char c -> Format.print_char c; exp
     | Bool b -> Format.print_bool b; exp
     | List l -> exp
+    | If(p, c, a) -> exp
     | Lambda(p, b, w) -> Format.print_string "#<lambda>"; exp
     | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
     | BinOp(o, x, y) -> Format.print_string "#<binop>"; exp
@@ -90,7 +93,7 @@ let unary_op oper arg =
       Not, Bool x -> Bool(not x)
     | Neg, Int x -> Int(-x)
     | Neg, Float x -> Float(-1.0 *. x)
-    | BNot, Int x -> Int(lnot x)
+    | Bnot, Int x -> Int(lnot x)
     | _ -> raise Type_mismatch
 
 let binary_op oper lhs rhs =
@@ -165,6 +168,7 @@ let rec eval exp env =
     | Char c -> exp
     | Bool b -> exp
     | List l -> List(evlis l env)
+    | If(p, c, a) -> condition exp env
     | Lambda(p, b, w) -> Closure(p, b, w, env)
     | Closure(p, b, w, e) -> exp
     | Apply(s, a) -> apply s (evlis a env) env
@@ -182,6 +186,13 @@ and apply sym args e =
         end
     | _ -> raise Type_mismatch
 and evlis lst env = List.map (fun exp -> eval exp env) lst
+and condition exp env =
+  match exp with
+      If(p, c, a) -> begin match (eval p env) with
+          Bool b -> if b then (eval c env) else (eval a env)
+        | _ -> raise Type_mismatch
+      end
+    | _ -> raise Type_mismatch
 
 (*
   Ideally the parser should generate two lists:
@@ -197,9 +208,9 @@ and evlis lst env = List.map (fun exp -> eval exp env) lst
 let x = Def(Symbol("x"), Int(400)) ;;
 let y = Def(Symbol("y"), Float(3.14)) ;;
 
-let body = BinOp(Add, Symbol("x"), Symbol("z")) ;;
+let iff = If(Bool(false), BinOp(Add, Symbol("x"), Symbol("z")), Int(-1))
 let where = Def(Symbol("z"), Int(4)) :: [] ;;
-let func = Closure(Symbol("x") :: [], body, where, []) ;;
+let func = Closure(Symbol("x") :: [], iff, where, []) ;;
 let f1 = Def(Symbol("f1"), func) ;;
 let a = Apply(Symbol("f1"), Symbol("x") :: []) ;;
 
