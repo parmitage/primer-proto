@@ -7,14 +7,12 @@
    - at
    - range
    - show
-   - <, > <=, >=, !=
    - is
    - as
    - loadlib
    - error
    - proper printer
-   - mod
-   - bitwise binops
+   - bitwise ops
    - symbol interning (or will OCaml do it?)
    - newline, tab
    - rnd
@@ -28,7 +26,7 @@ exception Type_mismatch
 exception Unbound_symbol
 exception Attempted_redefinition
 
-type binop = Add | Sub | Mul | Div | Equal | And | Or
+type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or
 type uniop = Not | Neg
 
 type expression =
@@ -110,14 +108,39 @@ let binary_op oper lhs rhs =
     | Div, Int x, Float y -> Float(float_of_int x /. y)
     | Div, Float x, Int y -> Float(x /. float_of_int y)
     | Div, Float x, Float y -> Float(x /. y)
-    | Equal, Int x, Int y -> Bool(x == y)
-    | Equal, Float x, Float y -> Bool(x == y)
-    | Equal, Int x, Float y -> Bool(float_of_int x == y)
-    | Equal, Float x, Int y -> Bool(x == float_of_int y)
-    | Equal, Char x, Char y -> Bool(x == y)
-    | Equal, Bool x, Bool y -> Bool(x == y)
-    | Equal, Symbol x, Symbol y -> Bool(x == y)
-    | Equal, _, _ -> Bool(false)
+    | Mod, Int x, Int y -> Int(x mod y)
+    | Eq, Int x, Int y -> Bool(x == y)
+    | Eq, Float x, Float y -> Bool(x == y)
+    | Eq, Int x, Float y -> Bool(float_of_int x == y)
+    | Eq, Float x, Int y -> Bool(x == float_of_int y)
+    | Eq, Char x, Char y -> Bool(x == y)
+    | Eq, Bool x, Bool y -> Bool(x == y)
+    | Eq, Symbol x, Symbol y -> Bool(x == y)
+    | Eq, _, _ -> Bool(false)
+    | Ne, Int x, Int y -> Bool(x != y)
+    | Ne, Float x, Float y -> Bool(x != y)
+    | Ne, Int x, Float y -> Bool(float_of_int x != y)
+    | Ne, Float x, Int y -> Bool(x != float_of_int y)
+    | Ne, Char x, Char y -> Bool(x != y)
+    | Ne, Bool x, Bool y -> Bool(x != y)
+    | Ne, Symbol x, Symbol y -> Bool(x != y)
+    | Ne, _, _ -> Bool(true)
+    | Lt, Int x, Int y -> Bool(x < y)
+    | Lt, Float x, Float y -> Bool(x < y)
+    | Lt, Int x, Float y -> Bool(float_of_int x < y)
+    | Lt, Float x, Int y -> Bool(x < float_of_int y)
+    | Gt, Int x, Int y -> Bool(x > y)
+    | Gt, Float x, Float y -> Bool(x > y)
+    | Gt, Int x, Float y -> Bool(float_of_int x > y)
+    | Gt, Float x, Int y -> Bool(x > float_of_int y)
+    | Lte, Int x, Int y -> Bool(x <= y)
+    | Lte, Float x, Float y -> Bool(x <= y)
+    | Lte, Int x, Float y -> Bool(float_of_int x <= y)
+    | Lte, Float x, Int y -> Bool(x <= float_of_int y)
+    | Gte, Int x, Int y -> Bool(x >= y)
+    | Gte, Float x, Float y -> Bool(x >= y)
+    | Gte, Int x, Float y -> Bool(float_of_int x >= y)
+    | Gte, Float x, Int y -> Bool(x >= float_of_int y)
     | And, Bool x, Bool y -> Bool(x && y)
     | Or, Bool x, Bool y -> Bool(x || y)
     | _ -> raise Type_mismatch
