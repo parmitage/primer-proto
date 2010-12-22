@@ -1,7 +1,6 @@
 (* TODO
    - lexer
    - parser
-   - car, cdr, cons, append
    - strings
    - length
    - at
@@ -44,6 +43,10 @@ type expression =
   | BinOp of binop * expression * expression
   | UniOp of uniop * expression
   | BitOp of bitop * expression * expression
+  | Head of expression list
+  | Tail of expression list
+  | Cons of expression * expression
+  | Append of expression * expression
 and definition = Def of expression * expression
 
 let rec pprint exp =
@@ -61,6 +64,10 @@ let rec pprint exp =
     | UniOp(o, x) -> Format.print_string "#<uniop>"; exp
     | BitOp(o, x, y) -> Format.print_string "#<bitop>"; exp
     | Apply(s, a) -> Format.print_string "#<funcall>"; exp
+    | Head xs -> exp
+    | Tail xs -> exp
+    | Cons(x, xs) -> exp
+    | Append(xs1, xs2) -> exp
 
 let rec take_while p lst = match lst with 
   | [] -> []
@@ -160,6 +167,22 @@ let bitwise_op oper lhs rhs =
     | RShift, Int x, Int y -> Int(x lsr y)
     | _ -> raise Type_mismatch
 
+let head exp = match exp with
+    List xs -> List.hd xs
+  | _ -> raise Type_mismatch
+
+let tail exp = match exp with
+    List xs -> List(List.tl xs)
+  | _ -> raise Type_mismatch
+
+let cons atom lst = match lst with
+    List xs -> List(atom :: xs)
+  | _ -> raise Type_mismatch
+
+let append lst1 lst2 = match lst1, lst2 with
+    List xs1, List xs2 -> List(List.append xs1 xs2)
+  | _ -> raise Type_mismatch
+
 let rec eval exp env =
   match exp with
       Symbol s -> Environment.lookup exp env
@@ -175,6 +198,10 @@ let rec eval exp env =
     | UniOp(o, arg) -> unary_op o (eval arg env)
     | BinOp(o, lhs, rhs) -> binary_op o (eval lhs env) (eval rhs env)
     | BitOp(o, lhs, rhs) -> bitwise_op o (eval lhs env) (eval rhs env)
+    | Head xs -> head exp
+    | Tail xs -> tail exp
+    | Cons(x, xs) -> cons x xs
+    | Append(xs1, xs2) -> append xs1 xs2
 and apply sym args e =
   match sym with
       Symbol s ->
