@@ -7,16 +7,14 @@
    - at
    - range
    - show
-   - neg
    - <, > <=, >=, !=
-   - not
    - is
    - as
    - loadlib
    - error
    - proper printer
    - mod
-   - bitwise operators
+   - bitwise binops
    - symbol interning (or will OCaml do it?)
    - newline, tab
    - rnd
@@ -30,7 +28,8 @@ exception Type_mismatch
 exception Unbound_symbol
 exception Attempted_redefinition
 
-type operator = Add | Sub | Mul | Div | Equal | And | Or
+type binop = Add | Sub | Mul | Div | Equal | And | Or
+type uniop = Not | Neg
 
 type expression =
     Symbol of string
@@ -42,7 +41,8 @@ type expression =
   | Lambda of expression list * expression * definition list
   | Closure of expression list * expression * definition list * definition list
   | Apply of expression * expression list
-  | BinOp of operator * expression * expression
+  | BinOp of binop * expression * expression
+  | UniOp of uniop * expression
 and definition = Def of expression * expression
 
 let rec pprint exp =
@@ -55,7 +55,8 @@ let rec pprint exp =
     | List l -> exp
     | Lambda(p, b, w) -> Format.print_string "#<lambda>"; exp
     | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
-    | BinOp(o, x, y) -> Format.print_string "#<operator>"; exp
+    | BinOp(o, x, y) -> Format.print_string "#<binop>"; exp
+    | UniOp(o, x) -> Format.print_string "#<uniop>"; exp
     | Apply(s, a) -> Format.print_string "#<funcall>"; exp
 
 let rec take_while p lst = match lst with 
@@ -83,6 +84,13 @@ struct
   let create env = Def(Symbol "env", Int(-1)) :: env
   let bind p a e = List.append (List.map2 (fun sym a -> Def(sym, a)) p a) e
 end
+
+let unary_op oper arg =
+  match oper, arg with
+      Not, Bool x -> Bool(not x)
+    | Neg, Int x -> Int(-x)
+    | Neg, Float x -> Float(-1.0 *. x)
+    | _ -> raise Type_mismatch
 
 let binary_op oper lhs rhs =
   match oper, lhs, rhs with
@@ -125,6 +133,7 @@ let rec eval exp env =
     | Lambda(p, b, w) -> Closure(p, b, w, env)
     | Closure(p, b, w, e) -> exp
     | Apply(s, a) -> apply s (evlis a env) env
+    | UniOp(o, arg) -> unary_op o (eval arg env)
     | BinOp(o, lhs, rhs) -> binary_op o (eval lhs env) (eval rhs env)
 and apply sym args e =
   match sym with
