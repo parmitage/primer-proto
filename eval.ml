@@ -1,10 +1,8 @@
 (* TODO
    - lexer
    - parser
-   - range
    - is
    - as
-   - rnd
    - loadlib
    - string equality tests
    - symbol interning (or will OCaml do it?)
@@ -12,15 +10,15 @@
    - unify strings and lists as in primer1?
    - better error handling
    - will tail calls be eliminated in apply/condition?
-   - Better matching for symbols and definitions (symbol_eq isn't really symbol equality)
-   - Environment.lookup is inefficient as it does a double scan of the environment
-   - Nicer marker for environment frames
+   - better matching for symbols and definitions (symbol_eq isn't really symbol equality)
+   - environment.lookup is inefficient as it does a double scan of the environment
+   - nicer marker for environment frames
    - evlis is inefficient - doesn't need to evaluate everything
 *)
 
 exception Type_mismatch
-exception Unbound_symbol
-exception Attempted_redefinition
+exception Symbol_unbound
+exception Symbol_redefined
 
 type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or
 type uniop = Not | Neg | Bnot
@@ -49,6 +47,8 @@ type expression =
   | Length of expression
   | At of expression list * expression
   | Show of expression
+  | Range of expression * expression
+  | Rnd of expression
 and definition = Def of expression * expression
 
 let rec take_while p lst = match lst with 
@@ -59,6 +59,11 @@ let rec intersperse sep lst = match lst with
     [] -> []
   | x::[] -> [x]
   | x::xs -> x :: sep :: (intersperse sep xs)
+
+let (--) i j = 
+  let rec aux n acc =
+    if n < i then acc else aux (n-1) (n :: acc)
+  in aux j []
 
 module Environment =
 struct
@@ -71,7 +76,7 @@ struct
   let lookup sym env =
     if symbol_bound sym env
     then match List.find (symbol_eq sym) env with Def(s, v) -> v
-    else raise Unbound_symbol
+    else raise Symbol_unbound
   let top env =
     take_while
       (fun b -> match b with
@@ -201,10 +206,18 @@ and pprint_list l =
   Format.print_char '[';
   ignore (List.map pprint (intersperse (String ", ") l)) ;
   Format.print_char ']'
-    
+
+let range f t = match f, t with
+    Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
+  | _, _ -> raise Type_mismatch
+
+let random exp = match exp with
+    Int i -> Int(Random.int i)
+  | _ -> raise Type_mismatch
+
 let rec eval exp env =
   match exp with
-      Symbol s -> eval (Environment.lookup exp env) env
+    | Symbol s -> eval (Environment.lookup exp env) env
     | Int i -> exp
     | Float f -> exp
     | Char c -> exp
@@ -226,6 +239,8 @@ let rec eval exp env =
     | Length exp -> length (eval exp env)
     | At(xs, i) -> at xs i
     | Show exp -> pprint exp
+    | Range(f, t) -> range f t
+    | Rnd i -> random i
 and apply sym args e =
   match sym with
       Symbol s ->
@@ -275,3 +290,6 @@ let op = Length(Symbol("xs")) ;;
 let lxs = eval op e1 ;;
 pprint(List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)])) ;;
 pprint(List([Int(0) ; Char('a') ; List([Float(10.3) ; Int(4)]) ; Int(12)])) ;;
+
+let xs2 = Range(Int(1), Int(10)) ;;
+pprint(eval xs2 e) ;;
