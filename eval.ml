@@ -1,17 +1,16 @@
 (* TODO
    - lexer
    - parser
-   - strings
    - range
-   - show
    - is
    - as
+   - rnd
    - loadlib
-   - error
-   - proper printer
+   - string equality tests
    - symbol interning (or will OCaml do it?)
    - newline, tab
-   - rnd
+   - unify strings and lists as in primer1?
+   - better error handling
    - will tail calls be eliminated in apply/condition?
    - Better matching for symbols and definitions (symbol_eq isn't really symbol equality)
    - Environment.lookup is inefficient as it does a double scan of the environment
@@ -33,7 +32,9 @@ type expression =
   | Float of float
   | Char of char
   | Bool of bool
+  | String of string
   | List of expression list
+  | Empty
   | If of expression * expression * expression
   | Lambda of expression list * expression * definition list
   | Closure of expression list * expression * definition list * definition list
@@ -47,33 +48,17 @@ type expression =
   | Append of expression * expression
   | Length of expression
   | At of expression list * expression
+  | Show of expression
 and definition = Def of expression * expression
-
-let rec pprint exp =
-  match exp with
-      Symbol s -> Format.print_string s; exp
-    | Int i -> Format.print_int i; exp
-    | Float f -> Format.print_float f; exp
-    | Char c -> Format.print_char c; exp
-    | Bool b -> Format.print_bool b; exp
-    | List l -> exp
-    | If(p, c, a) -> exp
-    | Lambda(p, b, w) -> Format.print_string "#<lambda>"; exp
-    | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
-    | BinOp(o, x, y) -> Format.print_string "#<binop>"; exp
-    | UniOp(o, x) -> Format.print_string "#<uniop>"; exp
-    | BitOp(o, x, y) -> Format.print_string "#<bitop>"; exp
-    | Apply(s, a) -> Format.print_string "#<funcall>"; exp
-    | Head xs -> exp
-    | Tail xs -> exp
-    | Cons(x, xs) -> exp
-    | Append(xs1, xs2) -> exp
-    | Length xs -> exp
-    | At(xs, i) -> exp
 
 let rec take_while p lst = match lst with 
   | [] -> []
   | x::xs -> if p x then x :: (take_while p xs) else []
+
+let rec intersperse sep lst = match lst with
+    [] -> []
+  | x::[] -> [x]
+  | x::xs -> x :: sep :: (intersperse sep xs)
 
 module Environment =
 struct
@@ -170,11 +155,17 @@ let bitwise_op oper lhs rhs =
     | _ -> raise Type_mismatch
 
 let head exp = match exp with
-    List xs -> List.hd xs
+    List l -> begin match l with
+        [] -> Empty
+      | x::xs -> x
+    end
   | _ -> raise Type_mismatch
 
 let tail exp = match exp with
-    List xs -> List(List.tl xs)
+    List l -> begin match l with
+        [] -> Empty
+      | x::xs -> List(xs)
+    end
   | _ -> raise Type_mismatch
 
 let cons atom lst = match lst with
@@ -193,6 +184,24 @@ let at xs i = match i with
     Int i -> List.nth xs i
   | _ -> raise Type_mismatch
 
+let rec pprint exp =
+  match exp with
+      Symbol s -> Format.print_string s; exp
+    | Int i -> Format.print_int i; exp
+    | Float f -> Format.print_float f; exp
+    | Char c -> Format.print_char c; exp
+    | Bool b -> Format.print_bool b; exp
+    | String s -> Format.print_string s; exp
+    | List l -> pprint_list l; exp
+    | Empty -> Format.print_string "[]"; exp
+    | Lambda(p, b, w) -> Format.print_string "#<lambda>"; exp
+    | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
+    | _ -> Format.print_string "#<builtin>"; exp
+and pprint_list l =
+  Format.print_char '[';
+  ignore (List.map pprint (intersperse (String ", ") l)) ;
+  Format.print_char ']'
+    
 let rec eval exp env =
   match exp with
       Symbol s -> eval (Environment.lookup exp env) env
@@ -200,7 +209,9 @@ let rec eval exp env =
     | Float f -> exp
     | Char c -> exp
     | Bool b -> exp
+    | String s -> exp
     | List l -> List(evlis l env)
+    | Empty -> exp
     | If(p, c, a) -> condition exp env
     | Lambda(p, b, w) -> Closure(p, b, w, env)
     | Closure(p, b, w, e) -> exp
@@ -214,6 +225,7 @@ let rec eval exp env =
     | Append(xs1, xs2) -> append xs1 xs2
     | Length exp -> length (eval exp env)
     | At(xs, i) -> at xs i
+    | Show exp -> pprint exp
 and apply sym args e =
   match sym with
       Symbol s ->
@@ -261,3 +273,5 @@ let xs = Def(Symbol("xs"), Cons(Int(-1), List([Int(0) ; Char('a') ; Float(10.3) 
 let e1 = xs :: e ;;
 let op = Length(Symbol("xs")) ;;
 let lxs = eval op e1 ;;
+pprint(List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)])) ;;
+pprint(List([Int(0) ; Char('a') ; List([Float(10.3) ; Int(4)]) ; Int(12)])) ;;
