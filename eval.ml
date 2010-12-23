@@ -1,9 +1,8 @@
 (* TODO
    - lexer
    - parser
-   - is
-   - as
    - loadlib
+   - is
    - string equality tests
    - symbol interning (or will OCaml do it?)
    - newline, tab
@@ -49,6 +48,7 @@ type expression =
   | Show of expression
   | Range of expression * expression
   | Rnd of expression
+  | Cast of expression * expression
 and definition = Def of expression * expression
 
 let rec take_while p lst = match lst with 
@@ -191,7 +191,7 @@ let at xs i = match i with
 
 let rec pprint exp =
   match exp with
-      Symbol s -> Format.print_string s; exp
+    | Symbol s -> Format.print_string s; exp
     | Int i -> Format.print_int i; exp
     | Float f -> Format.print_float f; exp
     | Char c -> Format.print_char c; exp
@@ -208,11 +208,25 @@ and pprint_list l =
   Format.print_char ']'
 
 let range f t = match f, t with
-    Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
+  | Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
   | _, _ -> raise Type_mismatch
 
 let random exp = match exp with
-    Int i -> Int(Random.int i)
+  | Int i -> Int(Random.int i)
+  | _ -> raise Type_mismatch
+
+let cast f t = match f, t with
+  | Int i, Float f -> Float(float_of_int i)
+  | Int i, String s -> String(string_of_int i)
+  | Int i, Bool b -> Bool(if i <= 0 then false else true)
+  | Float f, Int i -> Int(int_of_float f)
+  | Float f, String s -> String(string_of_float f)
+  | Bool b, Int i -> Int(if b then 1 else 0)
+  | Bool b, Float f -> Float(if b then 1.0 else 0.0)
+  | Bool b, String s -> String(if b then "true" else "false")
+  | Char c, Int i -> Int(int_of_char c)
+  | Char c, Float f -> Float(float_of_int (int_of_char c))
+  | Char c, String s -> String(String.make 1 c)
   | _ -> raise Type_mismatch
 
 let rec eval exp env =
@@ -241,6 +255,7 @@ let rec eval exp env =
     | Show exp -> pprint exp
     | Range(f, t) -> range f t
     | Rnd i -> random i
+    | Cast(f, t) -> cast f t
 and apply sym args e =
   match sym with
       Symbol s ->
@@ -293,3 +308,8 @@ pprint(List([Int(0) ; Char('a') ; List([Float(10.3) ; Int(4)]) ; Int(12)])) ;;
 
 let xs2 = Range(Int(1), Int(10)) ;;
 pprint(eval xs2 e) ;;
+
+let i = Int 12 ;;
+let fl = Float 12.0 ;;
+let cast = Cast(i, fl) ;;
+let fl2 = (eval cast []) ;;
