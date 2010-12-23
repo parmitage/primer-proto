@@ -2,8 +2,6 @@
    - lexer
    - parser
    - strings
-   - length
-   - at
    - range
    - show
    - is
@@ -47,6 +45,8 @@ type expression =
   | Tail of expression list
   | Cons of expression * expression
   | Append of expression * expression
+  | Length of expression
+  | At of expression list * expression
 and definition = Def of expression * expression
 
 let rec pprint exp =
@@ -68,6 +68,8 @@ let rec pprint exp =
     | Tail xs -> exp
     | Cons(x, xs) -> exp
     | Append(xs1, xs2) -> exp
+    | Length xs -> exp
+    | At(xs, i) -> exp
 
 let rec take_while p lst = match lst with 
   | [] -> []
@@ -183,9 +185,17 @@ let append lst1 lst2 = match lst1, lst2 with
     List xs1, List xs2 -> List(List.append xs1 xs2)
   | _ -> raise Type_mismatch
 
+let length exp = match exp with
+    List xs -> Int(List.length xs)
+  | _ -> raise Type_mismatch
+
+let at xs i = match i with
+    Int i -> List.nth xs i
+  | _ -> raise Type_mismatch
+
 let rec eval exp env =
   match exp with
-      Symbol s -> Environment.lookup exp env
+      Symbol s -> eval (Environment.lookup exp env) env
     | Int i -> exp
     | Float f -> exp
     | Char c -> exp
@@ -202,6 +212,8 @@ let rec eval exp env =
     | Tail xs -> tail exp
     | Cons(x, xs) -> cons x xs
     | Append(xs1, xs2) -> append xs1 xs2
+    | Length exp -> length (eval exp env)
+    | At(xs, i) -> at xs i
 and apply sym args e =
   match sym with
       Symbol s ->
@@ -244,3 +256,8 @@ let a = Apply(Symbol("f1"), Symbol("x") :: []) ;;
 let e = f1 :: x :: y :: [] ;;
 let result = eval a e ;;
 pprint(result) ;;
+
+let xs = Def(Symbol("xs"), Cons(Int(-1), List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)]))) ;;
+let e1 = xs :: e ;;
+let op = Length(Symbol("xs")) ;;
+let lxs = eval op e1 ;;
