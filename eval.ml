@@ -2,8 +2,9 @@
    - lexer
    - parser
    - loadlib
-   - is
    - string equality tests
+   - interned type names (int, char, etc)
+   - is operator
    - symbol interning (or will OCaml do it?)
    - newline, tab
    - unify strings and lists as in primer1?
@@ -13,52 +14,11 @@
    - environment.lookup is inefficient as it does a double scan of the environment
    - nicer marker for environment frames
    - evlis is inefficient - doesn't need to evaluate everything
+   - move (--) into utils module
+   - move operators and specials into a module
 *)
 
-exception Type_mismatch
-exception Symbol_unbound
-exception Symbol_redefined
-
-type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or
-type uniop = Not | Neg | Bnot
-type bitop = Band | Bor | Xor | LShift | RShift
-
-type expression =
-    Symbol of string
-  | Int of int
-  | Float of float
-  | Char of char
-  | Bool of bool
-  | String of string
-  | List of expression list
-  | Empty
-  | If of expression * expression * expression
-  | Lambda of expression list * expression * definition list
-  | Closure of expression list * expression * definition list * definition list
-  | Apply of expression * expression list
-  | BinOp of binop * expression * expression
-  | UniOp of uniop * expression
-  | BitOp of bitop * expression * expression
-  | Head of expression list
-  | Tail of expression list
-  | Cons of expression * expression
-  | Append of expression * expression
-  | Length of expression
-  | At of expression list * expression
-  | Show of expression
-  | Range of expression * expression
-  | Rnd of expression
-  | Cast of expression * expression
-and definition = Def of expression * expression
-
-let rec take_while p lst = match lst with 
-  | [] -> []
-  | x::xs -> if p x then x :: (take_while p xs) else []
-
-let rec intersperse sep lst = match lst with
-    [] -> []
-  | x::[] -> [x]
-  | x::xs -> x :: sep :: (intersperse sep xs)
+open Type
 
 let (--) i j = 
   let rec aux n acc =
@@ -78,7 +38,7 @@ struct
     then match List.find (symbol_eq sym) env with Def(s, v) -> v
     else raise Symbol_unbound
   let top env =
-    take_while
+    Utils.take_while
       (fun b -> match b with
           Def(s, v) -> match s with
               Symbol str -> str <> "env"
@@ -204,7 +164,7 @@ let rec pprint exp =
     | _ -> Format.print_string "#<builtin>"; exp
 and pprint_list l =
   Format.print_char '[';
-  ignore (List.map pprint (intersperse (String ", ") l)) ;
+  ignore (List.map pprint (Utils.intersperse (String ", ") l)) ;
   Format.print_char ']'
 
 let range f t = match f, t with
@@ -286,30 +246,39 @@ and condition exp env =
 *)
 
 (* test program *)
-let x = Def(Symbol("x"), Int(400)) ;;
-let y = Def(Symbol("y"), Float(3.14)) ;;
+(* let x = Def(Symbol("x"), Int(400)) ;; *)
+(* let y = Def(Symbol("y"), Float(3.14)) ;; *)
 
-let iff = If(Bool(false), BinOp(Add, Symbol("x"), Symbol("z")), Int(-1))
-let where = Def(Symbol("z"), Int(4)) :: [] ;;
-let func = Closure(Symbol("x") :: [], iff, where, []) ;;
-let f1 = Def(Symbol("f1"), func) ;;
-let a = Apply(Symbol("f1"), Symbol("x") :: []) ;;
+(* let iff = If(Bool(false), BinOp(Add, Symbol("x"), Symbol("z")), Int(-1)) *)
+(* let where = Def(Symbol("z"), Int(4)) :: [] ;; *)
+(* let func = Closure(Symbol("x") :: [], iff, where, []) ;; *)
+(* let f1 = Def(Symbol("f1"), func) ;; *)
+(* let a = Apply(Symbol("f1"), Symbol("x") :: []) ;; *)
 
-let e = f1 :: x :: y :: [] ;;
-let result = eval a e ;;
-pprint(result) ;;
+(* let e = f1 :: x :: y :: [] ;; *)
+(* let result = eval a e ;; *)
+(* pprint(result) ;; *)
 
-let xs = Def(Symbol("xs"), Cons(Int(-1), List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)]))) ;;
-let e1 = xs :: e ;;
-let op = Length(Symbol("xs")) ;;
-let lxs = eval op e1 ;;
-pprint(List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)])) ;;
-pprint(List([Int(0) ; Char('a') ; List([Float(10.3) ; Int(4)]) ; Int(12)])) ;;
+(* let xs = Def(Symbol("xs"), Cons(Int(-1), List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)]))) ;; *)
+(* let e1 = xs :: e ;; *)
+(* let op = Length(Symbol("xs")) ;; *)
+(* let lxs = eval op e1 ;; *)
+(* pprint(List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)])) ;; *)
+(* pprint(List([Int(0) ; Char('a') ; List([Float(10.3) ; Int(4)]) ; Int(12)])) ;; *)
 
-let xs2 = Range(Int(1), Int(10)) ;;
-pprint(eval xs2 e) ;;
+(* let xs2 = Range(Int(1), Int(10)) ;; *)
+(* pprint(eval xs2 e) ;; *)
 
-let i = Int 12 ;;
-let fl = Float 12.0 ;;
-let cast = Cast(i, fl) ;;
-let fl2 = (eval cast []) ;;
+(* let i = Int 12 ;; *)
+(* let fl = Float 12.0 ;; *)
+(* let cast = Cast(i, fl) ;; *)
+(* let fl2 = (eval cast []) ;; *)
+
+let _ =
+  try
+    let lexbuf = Lexing.from_channel stdin in
+    while true do
+      let result = Parser.main Lexer.token lexbuf in
+      ignore (pprint (eval result [])); print_newline(); flush stdout
+    done
+  with Lexer.Eof -> exit 0
