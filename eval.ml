@@ -1,7 +1,10 @@
 (* TODO
-   - lexer
-   - parser
+   - parsing lists
+   - printing still messed up
+   - where clause in lambda needs thought (parsing, definitions vs. expressions, ...)
+   - huge number of shift/reduce and reduce/reduce errors!
    - loadlib
+   - passing filename from command line
    - string equality tests
    - interned type names (int, char, etc)
    - is operator
@@ -10,7 +13,6 @@
    - unify strings and lists as in primer1?
    - better error handling
    - will tail calls be eliminated in apply/condition?
-   - better matching for symbols and definitions (symbol_eq isn't really symbol equality)
    - environment.lookup is inefficient as it does a double scan of the environment
    - nicer marker for environment frames
    - evlis is inefficient - doesn't need to evaluate everything
@@ -27,22 +29,21 @@ let (--) i j =
 
 module Environment =
 struct
-  let symbol_eq sym def =
-    match def with
-        Def(s, v) -> match s, sym with
-            Symbol str1, Symbol str2 -> str1 = str2
-          | _ -> raise Type_mismatch
-  let symbol_bound sym env = List.exists (symbol_eq sym) env
+  let marker = Symbol "env"
+  let symbol_eq sym1 sym2 = match sym1, sym2 with
+      Symbol str1, Symbol str2 -> str1 = str2
+    | _ -> raise Type_mismatch
+  let definition_eq sym def = match sym, def with
+      Symbol str1, Def(sym2, exp) -> symbol_eq sym sym2
+    | _ -> raise Type_mismatch
+  let symbol_bound sym env = List.exists (definition_eq sym) env
   let lookup sym env =
     if symbol_bound sym env
-    then match List.find (symbol_eq sym) env with Def(s, v) -> v
+    then match List.find (definition_eq sym) env with
+        Def(s, v) -> v
+      | _ -> raise Type_mismatch
     else raise Symbol_unbound
-  let top env =
-    Utils.take_while
-      (fun b -> match b with
-          Def(s, v) -> match s with
-              Symbol str -> str <> "env"
-            | _ -> raise Type_mismatch) env
+  let top env = Utils.take_while (fun b -> not (definition_eq marker b)) env
   let create env = Def(Symbol "env", Int(-1)) :: env
   let bind p a e = List.append (List.map2 (fun sym a -> Def(sym, a)) p a) e
 end
@@ -145,23 +146,23 @@ let length exp = match exp with
     List xs -> Int(List.length xs)
   | _ -> raise Type_mismatch
 
-let at xs i = match i with
-    Int i -> List.nth xs i
+let at lst idx = match lst, idx with
+  | List l, Int i -> List.nth l i
   | _ -> raise Type_mismatch
 
 let rec pprint exp =
   match exp with
-    | Symbol s -> Format.print_string s; exp
-    | Int i -> Format.print_int i; exp
-    | Float f -> Format.print_float f; exp
-    | Char c -> Format.print_char c; exp
-    | Bool b -> Format.print_bool b; exp
-    | String s -> Format.print_string s; exp
-    | List l -> pprint_list l; exp
-    | Empty -> Format.print_string "[]"; exp
-    | Lambda(p, b, w) -> Format.print_string "#<lambda>"; exp
-    | Closure(p, b, w, e) -> Format.print_string "#<closure>"; exp
-    | _ -> Format.print_string "#<builtin>"; exp
+    | Symbol s -> Format.print_string s
+    | Int i -> Format.print_int i
+    | Float f -> Format.print_float f
+    | Char c -> Format.print_char c
+    | Bool b -> Format.print_bool b
+    | String s -> Format.print_string s
+    | List l -> pprint_list l
+    | Empty -> Format.print_string "[]"
+    | Lambda(p, b, w) -> Format.print_string "#<lambda>"
+    | Closure(p, b, w, e) -> Format.print_string "#<closure>"
+    | _ -> Format.print_string "#<builtin>"
 and pprint_list l =
   Format.print_char '[';
   ignore (List.map pprint (Utils.intersperse (String ", ") l)) ;
@@ -202,6 +203,7 @@ let rec eval exp env =
     | If(p, c, a) -> condition exp env
     | Lambda(p, b, w) -> Closure(p, b, w, env)
     | Closure(p, b, w, e) -> exp
+    | Def(s, e) -> exp
     | Apply(s, a) -> apply s (evlis a env) env
     | UniOp(o, arg) -> unary_op o (eval arg env)
     | BinOp(o, lhs, rhs) -> binary_op o (eval lhs env) (eval rhs env)
@@ -212,7 +214,7 @@ let rec eval exp env =
     | Append(xs1, xs2) -> append xs1 xs2
     | Length exp -> length (eval exp env)
     | At(xs, i) -> at xs i
-    | Show exp -> pprint exp
+    | Show exp -> show exp env
     | Range(f, t) -> range f t
     | Rnd i -> random i
     | Cast(f, t) -> cast f t
@@ -234,51 +236,18 @@ and condition exp env =
         | _ -> raise Type_mismatch
       end
     | _ -> raise Type_mismatch
+and show exp env =
+  let result = eval exp env in
+  pprint result; result
 
-(*
-  Ideally the parser should generate two lists:
+(* let lexbuf = Lexing.from_channel stdin *)
+let lexbuf = Lexing.from_channel (open_in "/Users/phil/src/primer2/Small.pri")
 
-  1. A list of top level definitions. These will be turned into bindings and
-  interned in the top level environment.
+let rec repl env =
+  let result = Parser.main Lexer.token lexbuf in
+  match result with
+      Def(s, e) -> (repl (Def(s, (eval e env)) :: env))
+    | _ -> ignore(eval result env); repl env
 
-  2. A list of expressions. Each one of these should be evaluated in turn in
-  the newly created top level environment.
-*)
-
-(* test program *)
-(* let x = Def(Symbol("x"), Int(400)) ;; *)
-(* let y = Def(Symbol("y"), Float(3.14)) ;; *)
-
-(* let iff = If(Bool(false), BinOp(Add, Symbol("x"), Symbol("z")), Int(-1)) *)
-(* let where = Def(Symbol("z"), Int(4)) :: [] ;; *)
-(* let func = Closure(Symbol("x") :: [], iff, where, []) ;; *)
-(* let f1 = Def(Symbol("f1"), func) ;; *)
-(* let a = Apply(Symbol("f1"), Symbol("x") :: []) ;; *)
-
-(* let e = f1 :: x :: y :: [] ;; *)
-(* let result = eval a e ;; *)
-(* pprint(result) ;; *)
-
-(* let xs = Def(Symbol("xs"), Cons(Int(-1), List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)]))) ;; *)
-(* let e1 = xs :: e ;; *)
-(* let op = Length(Symbol("xs")) ;; *)
-(* let lxs = eval op e1 ;; *)
-(* pprint(List([Int(0) ; Char('a') ; Float(10.3) ; Int(12)])) ;; *)
-(* pprint(List([Int(0) ; Char('a') ; List([Float(10.3) ; Int(4)]) ; Int(12)])) ;; *)
-
-(* let xs2 = Range(Int(1), Int(10)) ;; *)
-(* pprint(eval xs2 e) ;; *)
-
-(* let i = Int 12 ;; *)
-(* let fl = Float 12.0 ;; *)
-(* let cast = Cast(i, fl) ;; *)
-(* let fl2 = (eval cast []) ;; *)
-
-let _ =
-  try
-    let lexbuf = Lexing.from_channel stdin in
-    while true do
-      let result = Parser.main Lexer.token lexbuf in
-      ignore (pprint (eval result [])); print_newline(); flush stdout
-    done
-  with Lexer.Eof -> exit 0
+let top = [] ;;
+repl [] ;;
