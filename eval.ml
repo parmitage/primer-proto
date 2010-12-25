@@ -1,10 +1,8 @@
 (* TODO
-   - parsing lists
    - printing still messed up
    - where clause in lambda needs thought (parsing, definitions vs. expressions, ...)
    - huge number of shift/reduce and reduce/reduce errors!
    - loadlib
-   - passing filename from command line
    - string equality tests
    - interned type names (int, char, etc)
    - is operator
@@ -12,6 +10,7 @@
    - newline, tab
    - unify strings and lists as in primer1?
    - better error handling
+   - REPL
    - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
    - nicer marker for environment frames
@@ -241,7 +240,8 @@ and show exp env =
   pprint result; result
 
 (* let lexbuf = Lexing.from_channel stdin *)
-let lexbuf = Lexing.from_channel (open_in "/Users/phil/src/primer2/Small.pri")
+let filename = Sys.argv .(1)
+let lexbuf = Lexing.from_channel (open_in filename)
 
 let rec repl env =
   let result = Parser.main Lexer.token lexbuf in

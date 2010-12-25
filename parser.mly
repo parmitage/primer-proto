@@ -7,7 +7,7 @@ open Type
 %token <char> CHAR
 %token <string> SYMBOL STRING
 %token PLUS MINUS TIMES DIV
-%token LPAREN RPAREN LSQUARE RSQUARE
+%token LPAREN RPAREN LSQUARE RSQUARE COMMA
 %token PROG DEF LAMBDA IF THEN ELSE ELIF COND APPLY
 %token LT GT GE LE NE EQ NOT AND OR MOD APPEND TRUE FALSE END LIST
 %token HEAD TAIL SHOW RND TYPE IS AS LENGTH AT CONS WHERE RANGE
@@ -87,6 +87,6 @@ identifier:
 
 list:
   expr                                                  { [$1] }
-  | expr ',' list                                       { $1 :: $3 }
+  | expr COMMA list                                     { $1 :: $3 }
   | /* empty list */                                    { [] }
 ;

@@ -25,6 +25,7 @@ rule token = parse
   | "or"                                              { OR }
   | ".."                                              { RANGE }
   | "mod"                                             { MOD }
+  | ','                                               { COMMA }
   | '&'                                               { B_AND }
   | '|'                                               { B_OR }
   | '^'                                               { B_XOR }
