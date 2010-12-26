@@ -7,8 +7,8 @@ open Type
 %token <char> CHAR
 %token <string> SYMBOL STRING
 %token PLUS MINUS TIMES DIV
-%token LPAREN RPAREN LSQUARE RSQUARE COMMA
-%token PROG DEF LAMBDA IF THEN ELSE ELIF COND APPLY
+%token LPAREN RPAREN LSQUARE RSQUARE COMMA SEMICOLON
+%token PROG DEF LAMBDA LET IN IF THEN ELSE ELIF COND APPLY
 %token LT GT GE LE NE EQ NOT AND OR MOD APPEND TRUE FALSE END LIST
 %token HEAD TAIL SHOW RND TYPE IS AS LENGTH AT CONS WHERE RANGE
 %token B_AND B_OR B_XOR B_NOT B_LSHIFT B_RSHIFT
@@ -30,7 +30,7 @@ open Type
 %%
 
 main:
-expr EOL                                                { $1 }
+expr SEMICOLON                                          { $1 }
   ;
 
 expr:
@@ -42,8 +42,8 @@ expr:
   | FALSE                                               { Bool false }
   | STRING                                              { String $1 }
   | identifier                                          { $1 }
-  | LAMBDA LPAREN list RPAREN expr END                  { Lambda($3, $5, $3) }
-  | LAMBDA LPAREN list RPAREN expr WHERE list END       { Lambda($3, $5, $7) }
+  | LET expr IN expr                                    { Let($2, $4) }
+  | LAMBDA LPAREN list RPAREN expr                      { Lambda($3, $5) }
   | identifier LPAREN list RPAREN                       { Apply($1, $3) }
   | expr DEF expr                                       { Def($1, $3) }
   | IF expr THEN expr ELSE expr                         { If($2, $4, $6) }

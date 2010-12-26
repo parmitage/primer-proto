@@ -1,6 +1,7 @@
 exception Type_mismatch
 exception Symbol_unbound
 exception Symbol_redefined
+exception Internal_error
 
 type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or
 type uniop = Not | Neg | Bnot
@@ -16,8 +17,9 @@ type expression =
   | List of expression list
   | Empty
   | If of expression * expression * expression
-  | Lambda of expression list * expression * expression list
-  | Closure of expression list * expression * expression list * expression list
+  | Let of expression * expression
+  | Lambda of expression list * expression
+  | Closure of expression list * expression * expression list
   | Apply of expression * expression list
   | BinOp of binop * expression * expression
   | UniOp of uniop * expression

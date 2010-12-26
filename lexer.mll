@@ -26,6 +26,7 @@ rule token = parse
   | ".."                                              { RANGE }
   | "mod"                                             { MOD }
   | ','                                               { COMMA }
+  | ';'                                               { SEMICOLON }
   | '&'                                               { B_AND }
   | '|'                                               { B_OR }
   | '^'                                               { B_XOR }
@@ -35,6 +36,8 @@ rule token = parse
   | "if"                                              { IF }
   | "then"                                            { THEN }
   | "else"                                            { ELSE }
+  | "let"                                             { LET }
+  | "in"                                              { IN }
   | "fn"                                              { LAMBDA }
   | "where"                                           { WHERE }
   | "true"                                            { TRUE }
@@ -50,10 +53,9 @@ rule token = parse
   | "Rnd"                                             { RND }
   | "Type"                                            { TYPE }
   | "Length"                                          { LENGTH }
-  | 'a'                                               { CHAR('a') }
+  | '''['a'-'z''A'-'Z''0'-'9']''' as lxm              { CHAR(String.get lxm 0) }
   | "sss" as lxm                                      { STRING(lxm) }
-  | [' ' '\t']                                        { token lexbuf } (* skip blanks *)
-  | ['\n']                                            { EOL }
+  | [' ' '\t' '\n']                                   { token lexbuf } (* skip blanks *)
   | ['0'-'9']+ as lxm                                 { INT(int_of_string lxm) }
   | ['0'-'9']+"."['0'-'9']+ as lxm                    { FLOAT(float_of_string lxm) }
   | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']* as lxm   { SYMBOL(lxm) }

@@ -1,7 +1,9 @@
 (* TODO
-   - printing still messed up
-   - where clause in lambda needs thought (parsing, definitions vs. expressions, ...)
-   - huge number of shift/reduce and reduce/reduce errors!
+   - definition_eq being passed two symbols - currently matched as a hack...
+   - printing messed up
+   - strings are not tokenised
+   - primer syntax modified to fit parser...
+   - staggering number of parser conflicts!
    - loadlib
    - string equality tests
    - interned type names (int, char, etc)
@@ -13,10 +15,9 @@
    - REPL
    - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
-   - nicer marker for environment frames
    - evlis is inefficient - doesn't need to evaluate everything
    - move (--) into utils module
-   - move operators and specials into a module
+   - move operators and specials into a module?
 *)
 
 open Type
@@ -26,24 +27,41 @@ let (--) i j =
     if n < i then acc else aux (n-1) (n :: acc)
   in aux j []
 
+let rec pprint exp =
+  match exp with
+    | Symbol s -> Format.print_string s
+    | Int i -> Format.print_int i
+    | Float f -> Format.print_float f
+    | Char c -> Format.print_char c
+    | Bool b -> Format.print_bool b
+    | String s -> Format.print_string s
+    | List l -> pprint_list l
+    | Empty -> Format.print_string "[]"
+    | Lambda(p, b) -> Format.print_string "#<lambda>"
+    | Closure(p, b, e) -> Format.print_string "#<closure>"
+    | _ -> Format.print_string "#<builtin>"
+and pprint_list l =
+  Format.print_char '[';
+  ignore (List.map pprint (Utils.intersperse (String ", ") l)) ;
+  Format.print_char ']'
+
 module Environment =
 struct
   let marker = Symbol "env"
   let symbol_eq sym1 sym2 = match sym1, sym2 with
       Symbol str1, Symbol str2 -> str1 = str2
-    | _ -> raise Type_mismatch
+    | _ -> pprint sym1; pprint sym2; raise Type_mismatch
   let definition_eq sym def = match sym, def with
       Symbol str1, Def(sym2, exp) -> symbol_eq sym sym2
+    | Symbol s1, Symbol s2 -> s1 = s2 (* should never match...! *)
     | _ -> raise Type_mismatch
-  let symbol_bound sym env = List.exists (definition_eq sym) env
+  let symbol_bound sym env = List.exists (fun b -> definition_eq sym b) env
   let lookup sym env =
     if symbol_bound sym env
-    then match List.find (definition_eq sym) env with
+    then match List.find (fun b -> definition_eq sym b) env with
         Def(s, v) -> v
       | _ -> raise Type_mismatch
     else raise Symbol_unbound
-  let top env = Utils.take_while (fun b -> not (definition_eq marker b)) env
-  let create env = Def(Symbol "env", Int(-1)) :: env
   let bind p a e = List.append (List.map2 (fun sym a -> Def(sym, a)) p a) e
 end
 
@@ -149,24 +167,6 @@ let at lst idx = match lst, idx with
   | List l, Int i -> List.nth l i
   | _ -> raise Type_mismatch
 
-let rec pprint exp =
-  match exp with
-    | Symbol s -> Format.print_string s
-    | Int i -> Format.print_int i
-    | Float f -> Format.print_float f
-    | Char c -> Format.print_char c
-    | Bool b -> Format.print_bool b
-    | String s -> Format.print_string s
-    | List l -> pprint_list l
-    | Empty -> Format.print_string "[]"
-    | Lambda(p, b, w) -> Format.print_string "#<lambda>"
-    | Closure(p, b, w, e) -> Format.print_string "#<closure>"
-    | _ -> Format.print_string "#<builtin>"
-and pprint_list l =
-  Format.print_char '[';
-  ignore (List.map pprint (Utils.intersperse (String ", ") l)) ;
-  Format.print_char ']'
-
 let range f t = match f, t with
   | Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
   | _, _ -> raise Type_mismatch
@@ -200,8 +200,9 @@ let rec eval exp env =
     | List l -> List(evlis l env)
     | Empty -> exp
     | If(p, c, a) -> condition exp env
-    | Lambda(p, b, w) -> Closure(p, b, w, env)
-    | Closure(p, b, w, e) -> exp
+    | Let(d, e) -> plet d e env
+    | Lambda(p, b) -> Closure(p, b, env)
+    | Closure(p, b, e) -> exp
     | Def(s, e) -> exp
     | Apply(s, a) -> apply s (evlis a env) env
     | UniOp(o, arg) -> unary_op o (eval arg env)
@@ -217,17 +218,20 @@ let rec eval exp env =
     | Range(f, t) -> range f t
     | Rnd i -> random i
     | Cast(f, t) -> cast f t
-and apply sym args e =
+and apply sym args env =
   match sym with
       Symbol s ->
-        let f = Environment.lookup sym e in
+        let f = Environment.lookup sym env in
         begin match f with
-            Closure(p, b, w, ce) ->
-              eval b (Environment.bind p args (List.append w (Environment.create ce)))
+            Closure(p, b, ce) ->
+              eval b (Environment.bind p args ce)
           | _ -> raise Type_mismatch
         end
     | _ -> raise Type_mismatch
 and evlis lst env = List.map (fun exp -> eval exp env) lst
+and plet def exp env = match def with
+    Def(s, v) -> eval exp (Def(s, (eval v env)) :: env)
+  | _ -> raise Type_mismatch
 and condition exp env =
   match exp with
       If(p, c, a) -> begin match (eval p env) with
