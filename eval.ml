@@ -1,6 +1,5 @@
 (* TODO
    - definition_eq being passed two symbols - currently matched as a hack...
-   - printing messed up
    - strings are not tokenised
    - primer syntax modified to fit parser...
    - staggering number of parser conflicts!
@@ -241,7 +240,7 @@ and condition exp env =
     | _ -> raise Type_mismatch
 and show exp env =
   let result = eval exp env in
-  pprint result; result
+  pprint result; Format.print_newline(); result
 
 (* let lexbuf = Lexing.from_channel stdin *)
 let filename = Sys.argv .(1)
