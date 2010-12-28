@@ -1,4 +1,6 @@
 (* TODO
+   - Ne is not working correctly
+   - 1 :: 2 :: [] fails
    - definition_eq being passed two symbols - currently matched as a hack...
    - strings are not tokenised
    - primer syntax modified to fit parser...
@@ -34,7 +36,6 @@ let rec pprint exp =
     | Bool b -> Format.print_bool b
     | String s -> Format.print_string s
     | List l -> pprint_list l
-    | Empty -> Format.print_string "[]"
     | Lambda(p, b) -> Format.print_string "#<lambda>"
     | Closure(p, b, e) -> Format.print_string "#<closure>"
     | _ -> Format.print_string "#<builtin>"
@@ -71,60 +72,61 @@ let unary_op oper arg =
     | Bnot, Int x -> Int(lnot x)
     | _ -> raise Type_mismatch
 
-let binary_op oper lhs rhs =
-  match oper, lhs, rhs with
-      Add, Int x, Int y -> Int(x + y)
-    | Add, Int x, Float y -> Float(float_of_int x +. y)
-    | Add, Float x, Int y -> Float(x +. float_of_int y)
-    | Add, Float x, Float y -> Float(x +. y)
-    | Sub, Int x, Int y -> Int(x - y)
-    | Sub, Int x, Float y -> Float(float_of_int x -. y)
-    | Sub, Float x, Int y -> Float(x -. float_of_int y)
-    | Sub, Float x, Float y -> Float(x -. y)
-    | Mul, Int x, Int y -> Int(x * y)
-    | Mul, Int x, Float y -> Float(float_of_int x *. y)
-    | Mul, Float x, Int y -> Float(x *. float_of_int y)
-    | Mul, Float x, Float y -> Float(x *. y)
-    | Div, Int x, Int y -> Float(float_of_int x /. float_of_int y)
-    | Div, Int x, Float y -> Float(float_of_int x /. y)
-    | Div, Float x, Int y -> Float(x /. float_of_int y)
-    | Div, Float x, Float y -> Float(x /. y)
-    | Mod, Int x, Int y -> Int(x mod y)
-    | Eq, Int x, Int y -> Bool(x == y)
-    | Eq, Float x, Float y -> Bool(x == y)
-    | Eq, Int x, Float y -> Bool(float_of_int x == y)
-    | Eq, Float x, Int y -> Bool(x == float_of_int y)
-    | Eq, Char x, Char y -> Bool(x == y)
-    | Eq, Bool x, Bool y -> Bool(x == y)
-    | Eq, Symbol x, Symbol y -> Bool(x == y)
-    | Eq, _, _ -> Bool(false)
-    | Ne, Int x, Int y -> Bool(x != y)
-    | Ne, Float x, Float y -> Bool(x != y)
-    | Ne, Int x, Float y -> Bool(float_of_int x != y)
-    | Ne, Float x, Int y -> Bool(x != float_of_int y)
-    | Ne, Char x, Char y -> Bool(x != y)
-    | Ne, Bool x, Bool y -> Bool(x != y)
-    | Ne, Symbol x, Symbol y -> Bool(x != y)
-    | Ne, _, _ -> Bool(true)
-    | Lt, Int x, Int y -> Bool(x < y)
-    | Lt, Float x, Float y -> Bool(x < y)
-    | Lt, Int x, Float y -> Bool(float_of_int x < y)
-    | Lt, Float x, Int y -> Bool(x < float_of_int y)
-    | Gt, Int x, Int y -> Bool(x > y)
-    | Gt, Float x, Float y -> Bool(x > y)
-    | Gt, Int x, Float y -> Bool(float_of_int x > y)
-    | Gt, Float x, Int y -> Bool(x > float_of_int y)
-    | Lte, Int x, Int y -> Bool(x <= y)
-    | Lte, Float x, Float y -> Bool(x <= y)
-    | Lte, Int x, Float y -> Bool(float_of_int x <= y)
-    | Lte, Float x, Int y -> Bool(x <= float_of_int y)
-    | Gte, Int x, Int y -> Bool(x >= y)
-    | Gte, Float x, Float y -> Bool(x >= y)
-    | Gte, Int x, Float y -> Bool(float_of_int x >= y)
-    | Gte, Float x, Int y -> Bool(x >= float_of_int y)
-    | And, Bool x, Bool y -> Bool(x && y)
-    | Or, Bool x, Bool y -> Bool(x || y)
-    | _ -> raise Type_mismatch
+let rec eq lhs rhs = match lhs, rhs with 
+  | Int x, Int y -> x == y
+  | Float x, Float y -> x == y
+  | Int x, Float y -> float_of_int x == y
+  | Float x, Int y -> x == float_of_int y
+  | Char x, Char y -> x == y
+  | Bool x, Bool y -> x == y
+  | Symbol x, Symbol y -> x == y
+  | List xs1, List xs2 -> list_eq xs1 xs2
+  | _, _ -> false
+and list_eq xs ys = match xs, ys with
+    x::xs, y::ys -> eq x y && list_eq xs ys
+  | [], [] -> true
+  | [], _ -> false
+  | _, [] -> false
+
+let rec binary_op oper lhs rhs = match oper, lhs, rhs with
+  | Add, Int x, Int y -> Int(x + y)
+  | Add, Int x, Float y -> Float(float_of_int x +. y)
+  | Add, Float x, Int y -> Float(x +. float_of_int y)
+  | Add, Float x, Float y -> Float(x +. y)
+  | Sub, Int x, Int y -> Int(x - y)
+  | Sub, Int x, Float y -> Float(float_of_int x -. y)
+  | Sub, Float x, Int y -> Float(x -. float_of_int y)
+  | Sub, Float x, Float y -> Float(x -. y)
+  | Mul, Int x, Int y -> Int(x * y)
+  | Mul, Int x, Float y -> Float(float_of_int x *. y)
+  | Mul, Float x, Int y -> Float(x *. float_of_int y)
+  | Mul, Float x, Float y -> Float(x *. y)
+  | Div, Int x, Int y -> Float(float_of_int x /. float_of_int y)
+  | Div, Int x, Float y -> Float(float_of_int x /. y)
+  | Div, Float x, Int y -> Float(x /. float_of_int y)
+  | Div, Float x, Float y -> Float(x /. y)
+  | Mod, Int x, Int y -> Int(x mod y)
+  | Eq, _, _ -> Bool(eq lhs rhs)
+  | Ne, _, _ -> Bool(not (eq lhs rhs))
+  | Lt, Int x, Int y -> Bool(x < y)
+  | Lt, Float x, Float y -> Bool(x < y)
+  | Lt, Int x, Float y -> Bool(float_of_int x < y)
+  | Lt, Float x, Int y -> Bool(x < float_of_int y)
+  | Gt, Int x, Int y -> Bool(x > y)
+  | Gt, Float x, Float y -> Bool(x > y)
+  | Gt, Int x, Float y -> Bool(float_of_int x > y)
+  | Gt, Float x, Int y -> Bool(x > float_of_int y)
+  | Lte, Int x, Int y -> Bool(x <= y)
+  | Lte, Float x, Float y -> Bool(x <= y)
+  | Lte, Int x, Float y -> Bool(float_of_int x <= y)
+  | Lte, Float x, Int y -> Bool(x <= float_of_int y)
+  | Gte, Int x, Int y -> Bool(x >= y)
+  | Gte, Float x, Float y -> Bool(x >= y)
+  | Gte, Int x, Float y -> Bool(float_of_int x >= y)
+  | Gte, Float x, Int y -> Bool(x >= float_of_int y)
+  | And, Bool x, Bool y -> Bool(x && y)
+  | Or, Bool x, Bool y -> Bool(x || y)
+  | _ -> raise Type_mismatch
 
 let bitwise_op oper lhs rhs =
   match oper, lhs, rhs with
@@ -137,14 +139,14 @@ let bitwise_op oper lhs rhs =
 
 let head exp = match exp with
     List l -> begin match l with
-        [] -> Empty
+        [] -> List []
       | x::xs -> x
     end
   | _ -> raise Type_mismatch
 
 let tail exp = match exp with
     List l -> begin match l with
-        [] -> Empty
+        [] -> List []
       | x::xs -> List(xs)
     end
   | _ -> raise Type_mismatch
@@ -196,19 +198,18 @@ let rec eval exp env =
     | Bool b -> exp
     | String s -> exp
     | List l -> List(evlis l env)
-    | Empty -> exp
     | If(p, c, a) -> condition exp env
     | Let(d, e) -> plet d e env
     | Lambda(p, b) -> Closure(p, b, env)
     | Closure(p, b, e) -> exp
-    | Def(s, e) -> exp
-    | Apply(s, a) -> apply s (evlis a env) env
+    | Def(s, e) -> eval e env
+    | Apply(s, a) -> apply (eval s env) (evlis a env) env
     | UniOp(o, arg) -> unary_op o (eval arg env)
     | BinOp(o, lhs, rhs) -> binary_op o (eval lhs env) (eval rhs env)
     | BitOp(o, lhs, rhs) -> bitwise_op o (eval lhs env) (eval rhs env)
-    | Head xs -> head exp
-    | Tail xs -> tail exp
-    | Cons(x, xs) -> cons x xs
+    | Head xs -> head (eval xs env)
+    | Tail xs -> tail (eval xs env)
+    | Cons(x, xs) -> cons (eval x env) (eval xs env)
     | Append(xs1, xs2) -> append xs1 xs2
     | Length exp -> length (eval exp env)
     | At(xs, i) -> at xs i
@@ -216,16 +217,10 @@ let rec eval exp env =
     | Range(f, t) -> range f t
     | Rnd i -> random i
     | Cast(f, t) -> cast f t
-and apply sym args env =
-  match sym with
-      Symbol s ->
-        let f = Environment.lookup sym env in
-        begin match f with
-            Closure(p, b, ce) ->
-              eval b (Environment.bind p args ce)
-          | _ -> raise Type_mismatch
-        end
-    | _ -> raise Type_mismatch
+and apply f args env = match f with
+    Closure(p, b, ce) ->
+      eval b (Environment.bind p args ce)
+  | _ -> raise Type_mismatch
 and evlis lst env = List.map (fun exp -> eval exp env) lst
 and plet def exp env = match def with
     Def(s, v) -> eval exp (Def(s, (eval v env)) :: env)
@@ -253,7 +248,7 @@ let rec repl env =
   if interactive then Format.print_string "> "; Format.print_flush();
   let result = Parser.main Lexer.token lexbuf in
   try match result with
-      Def(s, e) -> repl (Def(s, (eval e env)) :: env)
+      Def(s, e) -> repl (Def(s, e) :: env)
     | _ -> ignore(show (eval result env) env); repl env
   with
       Symbol_unbound -> error "unbound symbol"; repl env

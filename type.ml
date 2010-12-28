@@ -15,7 +15,6 @@ type expression =
   | Bool of bool
   | String of string
   | List of expression list
-  | Empty
   | If of expression * expression * expression
   | Let of expression * expression
   | Lambda of expression list * expression
