@@ -10,12 +10,12 @@
    - symbol interning (or will OCaml do it?)
    - newline, tab
    - unify strings and lists as in primer1?
-   - better error handling
    - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
    - evlis is inefficient - doesn't need to evaluate everything
    - move (--) into utils module
    - move operators and specials into a module?
+   - better error reporting
 *)
 
 open Type
@@ -241,16 +241,22 @@ and show exp env =
   let result = eval exp env in
   pprint result; Format.print_newline(); result
 
+let error msg = Format.printf "@[error: %s@]@." msg
+let interactive = Array.length Sys.argv == 1
+
 let lexbuf =
-  if Array.length Sys.argv == 1
+  if interactive
   then Lexing.from_channel stdin
   else Lexing.from_channel (open_in Sys.argv .(1))
 
 let rec repl env =
+  if interactive then Format.print_string "> "; Format.print_flush();
   let result = Parser.main Lexer.token lexbuf in
-  match result with
-      Def(s, e) -> (repl (Def(s, (eval e env)) :: env))
-    | _ -> ignore(eval result env); repl env
+  try match result with
+      Def(s, e) -> repl (Def(s, (eval e env)) :: env)
+    | _ -> ignore(show (eval result env) env); repl env
+  with
+      Symbol_unbound -> error "unbound symbol"; repl env
+    | Type_mismatch -> error "type mismatch"; repl env
 
-let top = [] ;;
-repl [] ;;
+let _ = repl [] ;;
