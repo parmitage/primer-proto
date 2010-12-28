@@ -11,7 +11,6 @@
    - newline, tab
    - unify strings and lists as in primer1?
    - better error handling
-   - REPL
    - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
    - evlis is inefficient - doesn't need to evaluate everything
@@ -242,9 +241,10 @@ and show exp env =
   let result = eval exp env in
   pprint result; Format.print_newline(); result
 
-(* let lexbuf = Lexing.from_channel stdin *)
-let filename = Sys.argv .(1)
-let lexbuf = Lexing.from_channel (open_in filename)
+let lexbuf =
+  if Array.length Sys.argv == 1
+  then Lexing.from_channel stdin
+  else Lexing.from_channel (open_in Sys.argv .(1))
 
 let rec repl env =
   let result = Parser.main Lexer.token lexbuf in
