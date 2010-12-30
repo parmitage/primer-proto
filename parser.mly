@@ -15,11 +15,11 @@ open Type
 %token EOL
 
 %nonassoc ELSE
-%left NOT B_NOT
+%left DEF LET IN LPAREN RPAREN NOT B_NOT
 %left AND OR APPEND
 %left LT GT GE LE EQ NE RANGE
 %left PLUS MINUS
-%left TIMES DIV MOD AT AS IS
+%left TIMES DIV MOD AT AS
 %left B_AND B_OR B_XOR B_LSHIFT B_RSHIFT
 %right CONS
 %nonassoc UMINUS

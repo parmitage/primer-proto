@@ -1,17 +1,15 @@
 (* TODO
-   - Ne is not working correctly
-   - 1 :: 2 :: [] fails
    - definition_eq being passed two symbols - currently matched as a hack...
    - strings are not tokenised
    - primer syntax modified to fit parser...
    - staggering number of parser conflicts!
-   - loadlib
+   - loadlib / stdlib
    - string equality tests
    - interned type names (int, char, etc)
    - is operator
    - symbol interning (or will OCaml do it?)
    - newline, tab
-   - unify strings and lists as in primer1?
+   - unify strings and lists as in primer1 or can I handle this with patterns?
    - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
    - evlis is inefficient - doesn't need to evaluate everything
@@ -218,8 +216,7 @@ let rec eval exp env =
     | Rnd i -> random i
     | Cast(f, t) -> cast f t
 and apply f args env = match f with
-    Closure(p, b, ce) ->
-      eval b (Environment.bind p args ce)
+    Closure(p, b, ce) -> eval b (Environment.bind p args ce)
   | _ -> raise Type_mismatch
 and evlis lst env = List.map (fun exp -> eval exp env) lst
 and plet def exp env = match def with
