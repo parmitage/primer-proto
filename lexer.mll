@@ -53,8 +53,8 @@ rule token = parse
   | "Rnd"                                             { RND }
   | "Type"                                            { TYPE }
   | "Length"                                          { LENGTH }
-  | '''['a'-'z''A'-'Z''0'-'9']''' as lxm              { CHAR(String.get lxm 0) }
-  | "sss" as lxm                                      { STRING(lxm) }
+  | '''['a'-'z''A'-'Z''0'-'9'' ']''' as lxm           { CHAR(String.get lxm 0) }
+  | '"'['a'-'z''A'-'Z''0'-'9'' ']*'"' as lxm          { STRING(String.sub lxm 1 (String.length lxm - 2)) }
   | [' ' '\t' '\n']                                   { token lexbuf } (* skip blanks *)
   | ['0'-'9']+ as lxm                                 { INT(int_of_string lxm) }
   | ['0'-'9']+"."['0'-'9']+ as lxm                    { FLOAT(float_of_string lxm) }

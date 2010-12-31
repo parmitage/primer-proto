@@ -1,21 +1,17 @@
 (* TODO
    - definition_eq being passed two symbols - currently matched as a hack...
-   - strings are not tokenised
-   - primer syntax modified to fit parser...
-   - staggering number of parser conflicts!
    - loadlib / stdlib
-   - string equality tests
    - interned type names (int, char, etc)
    - is operator
    - symbol interning (or will OCaml do it?)
    - newline, tab
-   - unify strings and lists as in primer1 or can I handle this with patterns?
    - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
    - evlis is inefficient - doesn't need to evaluate everything
    - move (--) into utils module
    - move operators and specials into a module?
    - better error reporting
+   - cons char string
 *)
 
 open Type
@@ -79,6 +75,7 @@ let rec eq lhs rhs = match lhs, rhs with
   | Bool x, Bool y -> x == y
   | Symbol x, Symbol y -> x == y
   | List xs1, List xs2 -> list_eq xs1 xs2
+  | String s1, String s2 -> s1 = s2
   | _, _ -> false
 and list_eq xs ys = match xs, ys with
     x::xs, y::ys -> eq x y && list_eq xs ys
@@ -140,6 +137,7 @@ let head exp = match exp with
         [] -> List []
       | x::xs -> x
     end
+  | String s -> Char(String.get s 0)
   | _ -> raise Type_mismatch
 
 let tail exp = match exp with
@@ -147,6 +145,7 @@ let tail exp = match exp with
         [] -> List []
       | x::xs -> List(xs)
     end
+  | String s -> String(String.sub s 1 ((String.length s) - 1))
   | _ -> raise Type_mismatch
 
 let cons atom lst = match lst with
@@ -155,10 +154,12 @@ let cons atom lst = match lst with
 
 let append lst1 lst2 = match lst1, lst2 with
     List xs1, List xs2 -> List(List.append xs1 xs2)
+  | String s1, String s2 -> String(s1 ^ s2)
   | _ -> raise Type_mismatch
 
 let length exp = match exp with
     List xs -> Int(List.length xs)
+  | String s -> Int(String.length s)
   | _ -> raise Type_mismatch
 
 let at lst idx = match lst, idx with
