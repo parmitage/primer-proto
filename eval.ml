@@ -43,7 +43,7 @@ struct
   let marker = Symbol "env"
   let symbol_eq sym1 sym2 = match sym1, sym2 with
       Symbol str1, Symbol str2 -> str1 = str2
-    | _ -> pprint sym1; pprint sym2; raise Type_mismatch
+    | _ -> raise Type_mismatch
   let definition_eq sym def = match sym, def with
       Symbol str1, Def(sym2, exp) -> symbol_eq sym sym2
     | Symbol s1, Symbol s2 -> s1 = s2 (* should never match...! *)
@@ -80,8 +80,7 @@ let rec eq lhs rhs = match lhs, rhs with
 and list_eq xs ys = match xs, ys with
     x::xs, y::ys -> eq x y && list_eq xs ys
   | [], [] -> true
-  | [], _ -> false
-  | _, [] -> false
+  | _, _ -> false
 
 let rec binary_op oper lhs rhs = match oper, lhs, rhs with
   | Add, Int x, Int y -> Int(x + y)
@@ -121,6 +120,10 @@ let rec binary_op oper lhs rhs = match oper, lhs, rhs with
   | Gte, Float x, Int y -> Bool(x >= float_of_int y)
   | And, Bool x, Bool y -> Bool(x && y)
   | Or, Bool x, Bool y -> Bool(x || y)
+  | App, List xs1, List xs2 -> List(List.append xs1 xs2)
+  | App, String s1, String s2 -> String(s1 ^ s2)
+  | Rge, Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
+  | Cons, _, List xs -> List(lhs :: xs)
   | _ -> raise Type_mismatch
 
 let bitwise_op oper lhs rhs =
@@ -148,15 +151,6 @@ let tail exp = match exp with
   | String s -> String(String.sub s 1 ((String.length s) - 1))
   | _ -> raise Type_mismatch
 
-let cons atom lst = match lst with
-    List xs -> List(atom :: xs)
-  | _ -> raise Type_mismatch
-
-let append lst1 lst2 = match lst1, lst2 with
-    List xs1, List xs2 -> List(List.append xs1 xs2)
-  | String s1, String s2 -> String(s1 ^ s2)
-  | _ -> raise Type_mismatch
-
 let length exp = match exp with
     List xs -> Int(List.length xs)
   | String s -> Int(String.length s)
@@ -165,10 +159,6 @@ let length exp = match exp with
 let at lst idx = match lst, idx with
   | List l, Int i -> List.nth l i
   | _ -> raise Type_mismatch
-
-let range f t = match f, t with
-  | Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
-  | _, _ -> raise Type_mismatch
 
 let random exp = match exp with
   | Int i -> Int(Random.int i)
@@ -208,12 +198,9 @@ let rec eval exp env =
     | BitOp(o, lhs, rhs) -> bitwise_op o (eval lhs env) (eval rhs env)
     | Head xs -> head (eval xs env)
     | Tail xs -> tail (eval xs env)
-    | Cons(x, xs) -> cons (eval x env) (eval xs env)
-    | Append(xs1, xs2) -> append xs1 xs2
     | Length exp -> length (eval exp env)
     | At(xs, i) -> at xs i
     | Show exp -> show exp env
-    | Range(f, t) -> range f t
     | Rnd i -> random i
     | Cast(f, t) -> cast f t
 and apply f args env = match f with

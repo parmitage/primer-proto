@@ -3,7 +3,7 @@ exception Symbol_unbound
 exception Symbol_redefined
 exception Internal_error
 
-type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or
+type binop = Add | Sub | Mul | Div | Mod | Eq | Ne | Lt | Gt | Gte | Lte | And | Or | App | Rge | Cons
 type uniop = Not | Neg | Bnot
 type bitop = Band | Bor | Xor | LShift | RShift
 
@@ -25,12 +25,9 @@ type expression =
   | BitOp of bitop * expression * expression
   | Head of expression
   | Tail of expression
-  | Cons of expression * expression
-  | Append of expression * expression
   | Length of expression
   | At of expression * expression
   | Show of expression
-  | Range of expression * expression
   | Rnd of expression
   | Cast of expression * expression
   | Def of expression * expression

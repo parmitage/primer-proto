@@ -47,7 +47,7 @@ expr:
   | identifier LPAREN list RPAREN                       { Apply($1, $3) }
   | expr DEF expr                                       { Def($1, $3) }
   | IF expr THEN expr ELSE expr                         { If($2, $4, $6) }
-  | expr CONS expr                                      { Cons($1, $3) }
+  | expr CONS expr                                      { BinOp(Cons, $1, $3) }
   | SHOW LPAREN expr RPAREN                             { Show $3 }
   | LENGTH LPAREN expr RPAREN                           { Length $3 }
   | HEAD LPAREN expr RPAREN                             { Head $3 }
@@ -73,8 +73,8 @@ expr:
   | expr B_RSHIFT expr                                  { BitOp(RShift, $1, $3) }
   | NOT expr                                            { UniOp(Not, $2) }
   | expr MOD expr                                       { BinOp(Mod, $1, $3) }
-  | expr APPEND expr                                    { Append($1, $3) }
-  | expr RANGE expr                                     { Range($1, $3) }
+  | expr APPEND expr                                    { BinOp(App, $1, $3) }
+  | expr RANGE expr                                     { BinOp(Rge, $1, $3) }
   | expr AT expr                                        { At($1, $3) }
   | expr AS expr                                        { Cast($1, $3) }
   | MINUS expr %prec UMINUS                             { UniOp(Neg, $2) }
