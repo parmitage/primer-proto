@@ -1,17 +1,16 @@
 (* TODO
-   - definition_eq being passed two symbols - currently matched as a hack...
-   - loadlib / stdlib
-   - interned type names (int, char, etc)
+   - loadlib
+   - stdlib
    - is operator
-   - symbol interning (or will OCaml do it?)
    - newline, tab
+   - rng not seeded
+   - interned type names (int, char, etc)
+   - symbol interning (or will OCaml do it?)
    - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
    - evlis is inefficient - doesn't need to evaluate everything
    - move (--) into utils module
-   - move operators and specials into a module?
    - better error reporting
-   - cons char string
 *)
 
 open Type
@@ -46,7 +45,6 @@ struct
     | _ -> raise Type_mismatch
   let definition_eq sym def = match sym, def with
       Symbol str1, Def(sym2, exp) -> symbol_eq sym sym2
-    | Symbol s1, Symbol s2 -> s1 = s2 (* should never match...! *)
     | _ -> raise Type_mismatch
   let symbol_bound sym env = List.exists (fun b -> definition_eq sym b) env
   let lookup sym env =
@@ -124,6 +122,7 @@ let rec binary_op oper lhs rhs = match oper, lhs, rhs with
   | App, String s1, String s2 -> String(s1 ^ s2)
   | Rge, Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
   | Cons, _, List xs -> List(lhs :: xs)
+  | Cons, Char c, String s -> String(String.make 1 c ^ s)
   | _ -> raise Type_mismatch
 
 let bitwise_op oper lhs rhs =
@@ -178,6 +177,8 @@ let cast f t = match f, t with
   | Char c, String s -> String(String.make 1 c)
   | _ -> raise Type_mismatch
 
+let show exp = pprint exp; Format.print_newline(); exp
+
 let rec eval exp env =
   match exp with
     | Symbol s -> eval (Environment.lookup exp env) env
@@ -199,9 +200,9 @@ let rec eval exp env =
     | Head xs -> head (eval xs env)
     | Tail xs -> tail (eval xs env)
     | Length exp -> length (eval exp env)
-    | At(xs, i) -> at xs i
-    | Show exp -> show exp env
-    | Rnd i -> random i
+    | At(xs, i) -> at (eval xs env) (eval i env)
+    | Show exp -> show (eval exp env)
+    | Rnd i -> random (eval i env)
     | Cast(f, t) -> cast f t
 and apply f args env = match f with
     Closure(p, b, ce) -> eval b (Environment.bind p args ce)
@@ -217,9 +218,6 @@ and condition exp env =
         | _ -> raise Type_mismatch
       end
     | _ -> raise Type_mismatch
-and show exp env =
-  let result = eval exp env in
-  pprint result; Format.print_newline(); result
 
 let error msg = Format.printf "@[error: %s@]@." msg
 let interactive = Array.length Sys.argv == 1
@@ -234,7 +232,7 @@ let rec repl env =
   let result = Parser.main Lexer.token lexbuf in
   try match result with
       Def(s, e) -> repl (Def(s, e) :: env)
-    | _ -> ignore(show (eval result env) env); repl env
+    | _ -> ignore(show (eval result env)); repl env
   with
       Symbol_unbound -> error "unbound symbol"; repl env
     | Type_mismatch -> error "type mismatch"; repl env

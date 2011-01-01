@@ -20,7 +20,7 @@ rule token = parse
   | ')'                           { RPAREN }
   | '['                           { LSQUARE }
   | ']'                           { RSQUARE }
-  | ':'                           { DEF }
+  | '='                           { DEF }
   | "not"                         { NOT }
   | '<'                           { LT }
   | '>'                           { GT }
