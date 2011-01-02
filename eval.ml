@@ -6,9 +6,7 @@
    - rng not seeded
    - interned type names (int, char, etc)
    - symbol interning (or will OCaml do it?)
-   - will tail calls be eliminated in apply/condition?
    - environment.lookup is inefficient as it does a double scan of the environment
-   - evlis is inefficient - doesn't need to evaluate everything
    - move (--) into utils module
    - better error reporting
 *)
@@ -179,6 +177,16 @@ let cast f t = match f, t with
 
 let show exp = pprint exp; Format.print_newline(); exp
 
+let is_primitive_list l =
+  List.for_all
+    (fun e -> match e with
+      | Int _ -> true
+      | Float _ -> true
+      | Char _ -> true
+      | Bool _ -> true
+      | String _ -> true
+      | _ -> false) l
+
 let rec eval exp env =
   match exp with
     | Symbol s -> eval (Environment.lookup exp env) env
@@ -187,7 +195,7 @@ let rec eval exp env =
     | Char c -> exp
     | Bool b -> exp
     | String s -> exp
-    | List l -> List(evlis l env)
+    | List l -> if is_primitive_list l then exp else List(evlis l env)
     | If(p, c, a) -> condition exp env
     | Let(d, e) -> plet d e env
     | Lambda(p, b) -> Closure(p, b, env)
