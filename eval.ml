@@ -1,6 +1,6 @@
 (* TODO
-   - loadlib
-   - stdlib
+   - tests
+   - examples
    - is operator
    - newline, tab
    - rng not seeded
@@ -209,7 +209,7 @@ and apply f args env = match f with
   | _ -> raise Type_mismatch
 and evlis lst env = List.map (fun exp -> eval exp env) lst
 and plet def exp env = match def with
-    Def(s, v) -> eval exp (Def(s, (eval v env)) :: env)
+    Def(s, v) -> eval exp (Def(s, v) :: env)
   | _ -> raise Type_mismatch
 and condition exp env =
   match exp with
@@ -236,5 +236,14 @@ let rec repl env =
   with
       Symbol_unbound -> error "unbound symbol"; repl env
     | Type_mismatch -> error "type mismatch"; repl env
+    | Lexer.Eof -> exit 0
 
-let _ = repl [] ;;
+let rec load buf env =
+  try
+    let result = Parser.main Lexer.token buf in
+    match result with
+        Def(s, e) -> load buf (Def(s, e) :: env)
+      | _ -> load buf env
+  with Lexer.Eof -> env
+
+let _ = repl (load (Lexing.from_channel (open_in "Library.pri")) []) ;;

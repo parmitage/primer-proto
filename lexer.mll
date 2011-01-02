@@ -1,6 +1,7 @@
 {
   open Type
   open Parser
+  exception Eof
 }
 
 let digit = ['0'-'9']
@@ -65,4 +66,4 @@ rule token = parse
   | digit+ as lxm                 { INT(int_of_string lxm) }
   | digit+ '.' digit+ as lxm      { FLOAT(float_of_string lxm) }
   | ident as lxm                  { SYMBOL(lxm) }
-  | eof                           { print_newline(); flush stdout; exit 0 }
+  | eof                           { raise Eof }

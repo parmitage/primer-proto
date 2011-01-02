@@ -1,5 +1,5 @@
 %{
-open Type
+  open Type
 %}
 
 %token <int> INT
