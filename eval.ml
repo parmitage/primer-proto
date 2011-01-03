@@ -1,20 +1,13 @@
 (* TODO
+   - convert all examples
    - tests
-   - examples
-   - rng not seeded
    - symbol interning
    - environments are inefficient due to deep lookups
    - environment.lookup is inefficient as it does a double scan of the environment
-   - move (--) into utils module
-   - better error reporting
 *)
 
 open Type
-
-let (--) i j = 
-  let rec aux n acc =
-    if n < i then acc else aux (n-1) (n :: acc)
-  in aux j []
+open Utils
 
 let rec pprint exp =
   match exp with
@@ -30,7 +23,7 @@ let rec pprint exp =
     | _ -> Format.print_string "#<builtin>"
 and pprint_list l =
   Format.print_char '[';
-  ignore (List.map pprint (Utils.intersperse (String ", ") l)) ;
+  ignore (List.map pprint (intersperse (String ", ") l)) ;
   Format.print_char ']'
 
 module Environment =
@@ -266,6 +259,7 @@ let rec repl env =
       Symbol_unbound -> error "unbound symbol"; repl env
     | Type_mismatch -> error "type mismatch"; repl env
     | Invalid_cast -> error "invalid cast"; repl env
+    | Parsing.Parse_error -> error "parse error"; repl env
     | Lexer.Eof -> exit 0
 
 let rec load buf env =
@@ -275,6 +269,8 @@ let rec load buf env =
         | _ -> load buf env
   with Lexer.Eof -> env
 
-let _ = repl
-  (load (Lexing.from_channel (open_in "Library.pri"))
-     (initial_toplevel [])) ;;
+let _ =
+  Random.self_init();
+  let toplevel = initial_toplevel [] in
+  let prelude = (load (Lexing.from_channel (open_in "Library.pri")) toplevel) in
+  repl prelude ;;

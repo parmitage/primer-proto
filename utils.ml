@@ -6,3 +6,8 @@ let rec intersperse sep lst = match lst with
     [] -> []
   | x::[] -> [x]
   | x::xs -> x :: sep :: (intersperse sep xs)
+
+let (--) i j = 
+  let rec aux n acc =
+    if n < i then acc else aux (n-1) (n :: acc)
+  in aux j []
