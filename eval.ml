@@ -1,11 +1,9 @@
 (* TODO
    - tests
    - examples
-   - is operator
-   - newline, tab
    - rng not seeded
-   - interned type names (int, char, etc)
-   - symbol interning (or will OCaml do it?)
+   - symbol interning
+   - environments are inefficient due to deep lookups
    - environment.lookup is inefficient as it does a double scan of the environment
    - move (--) into utils module
    - better error reporting
@@ -162,18 +160,27 @@ let random exp = match exp with
   | _ -> raise Type_mismatch
 
 let cast f t = match f, t with
-  | Int i, Float f -> Float(float_of_int i)
-  | Int i, String s -> String(string_of_int i)
-  | Int i, Bool b -> Bool(if i <= 0 then false else true)
-  | Float f, Int i -> Int(int_of_float f)
-  | Float f, String s -> String(string_of_float f)
-  | Bool b, Int i -> Int(if b then 1 else 0)
-  | Bool b, Float f -> Float(if b then 1.0 else 0.0)
-  | Bool b, String s -> String(if b then "true" else "false")
-  | Char c, Int i -> Int(int_of_char c)
-  | Char c, Float f -> Float(float_of_int (int_of_char c))
-  | Char c, String s -> String(String.make 1 c)
-  | _ -> raise Type_mismatch
+  | Int i, Type TFloat -> Float(float_of_int i)
+  | Int i, Type TString -> String(string_of_int i)
+  | Int i, Type TBool -> Bool(if i <= 0 then false else true)
+  | Float f, Type TInt -> Int(int_of_float f)
+  | Float f, Type TString -> String(string_of_float f)
+  | Bool b, Type TInt -> Int(if b then 1 else 0)
+  | Bool b, Type TFloat -> Float(if b then 1.0 else 0.0)
+  | Bool b, Type TString -> String(if b then "true" else "false")
+  | Char c, Type TInt -> Int(int_of_char c)
+  | Char c, Type TFloat -> Float(float_of_int (int_of_char c))
+  | Char c, Type TString -> String(String.make 1 c)
+  | _ -> raise Invalid_cast
+
+let is lhs typ = match lhs, typ with
+  | Int _, Type TInt -> Bool(true)
+  | Float _, Type TFloat -> Bool(true)
+  | Char _, Type TChar -> Bool(true)
+  | Bool _, Type TBool -> Bool(true)
+  | String _, Type TString -> Bool(true)
+  | List _, Type TList -> Bool(true)
+  | _, _ -> Bool(false)
 
 let show exp = pprint exp; Format.print_newline(); exp
 
@@ -209,9 +216,11 @@ let rec eval exp env =
     | Tail xs -> tail (eval xs env)
     | Length exp -> length (eval exp env)
     | At(xs, i) -> at (eval xs env) (eval i env)
+    | Is(x, t) -> is (eval x env) (eval t env)
     | Show exp -> show (eval exp env)
     | Rnd i -> random (eval i env)
-    | Cast(f, t) -> cast f t
+    | Cast(f, t) -> cast (eval f env) (eval t env)
+    | Type _ -> exp
 and apply f args env = match f with
     Closure(p, b, ce) -> eval b (Environment.bind p args ce)
   | _ -> raise Type_mismatch
@@ -226,6 +235,18 @@ and condition exp env =
         | _ -> raise Type_mismatch
       end
     | _ -> raise Type_mismatch
+
+let initial_toplevel env = 
+  Def(Symbol("int"), Type(TInt))
+  :: Def(Symbol("float"), Type(TFloat))
+  :: Def(Symbol("char"), Type(TChar))
+  :: Def(Symbol("bool"), Type(TBool))
+  :: Def(Symbol("string"), Type(TString))
+  :: Def(Symbol("list"), Type(TList))
+  :: Def(Symbol("lambda"), Type(TLambda))
+  :: Def(Symbol("newline"), Char('\n'))
+  :: Def(Symbol("tab"), Char('\t'))
+  :: env    
 
 let error msg = Format.printf "@[error: %s@]@." msg
 let interactive = Array.length Sys.argv == 1
@@ -244,14 +265,16 @@ let rec repl env =
   with
       Symbol_unbound -> error "unbound symbol"; repl env
     | Type_mismatch -> error "type mismatch"; repl env
+    | Invalid_cast -> error "invalid cast"; repl env
     | Lexer.Eof -> exit 0
 
 let rec load buf env =
-  try
-    let result = Parser.main Lexer.token buf in
-    match result with
-        Def(s, e) -> load buf (Def(s, e) :: env)
-      | _ -> load buf env
+  try let result = Parser.main Lexer.token buf in
+      match result with
+          Def(s, e) -> load buf (Def(s, e) :: env)
+        | _ -> load buf env
   with Lexer.Eof -> env
 
-let _ = repl (load (Lexing.from_channel (open_in "Library.pri")) []) ;;
+let _ = repl
+  (load (Lexing.from_channel (open_in "Library.pri"))
+     (initial_toplevel [])) ;;

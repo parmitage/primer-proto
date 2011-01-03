@@ -19,7 +19,7 @@
 %left AND OR APPEND
 %left LT GT GE LE EQ NE RANGE
 %left PLUS MINUS
-%left TIMES DIV MOD AT AS
+%left TIMES DIV MOD AT AS IS
 %left B_AND B_OR B_XOR B_LSHIFT B_RSHIFT
 %right CONS
 %nonassoc UMINUS
@@ -75,6 +75,7 @@ expr:
   | expr MOD expr                                       { BinOp(Mod, $1, $3) }
   | expr APPEND expr                                    { BinOp(App, $1, $3) }
   | expr RANGE expr                                     { BinOp(Rge, $1, $3) }
+  | expr IS expr                                        { Is($1, $3) }
   | expr AT expr                                        { At($1, $3) }
   | expr AS expr                                        { Cast($1, $3) }
   | MINUS expr %prec UMINUS                             { UniOp(Neg, $2) }
