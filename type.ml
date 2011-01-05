@@ -19,7 +19,7 @@ type expression =
   | String of string
   | List of expression list
   | If of expression * expression * expression
-  | Let of expression * expression
+  | Let of expression * expression * expression
   | Lambda of expression list * expression
   | Closure of expression list * expression * expression list
   | Apply of expression * expression list

@@ -3,7 +3,7 @@ let rec take_while p lst = match lst with
   | x::xs -> if p x then x :: (take_while p xs) else []
 
 let rec intersperse sep lst = match lst with
-    [] -> []
+  | [] -> []
   | x::[] -> [x]
   | x::xs -> x :: sep :: (intersperse sep xs)
 
@@ -11,3 +11,22 @@ let (--) i j =
   let rec aux n acc =
     if n < i then acc else aux (n-1) (n :: acc)
   in aux j []
+
+let rec zip l1 l2 = match l1, l2 with
+    x::xs, y::ys -> (x, y) :: zip xs ys
+  | [], [] -> []
+  | _, _ -> []
+
+let rec replace_top a b l = match l with
+    x::xs ->
+      if x = a
+      then b :: xs
+      else x :: replace_top a b xs
+  | [] -> []
+
+let rec replace_top_by fn a b l = match l with
+    x::xs ->
+      if fn a x
+      then b :: xs
+      else x :: replace_top_by fn a b xs
+  | [] -> []

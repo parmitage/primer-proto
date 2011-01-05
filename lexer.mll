@@ -5,8 +5,8 @@
 }
 
 let digit = ['0'-'9']
-let ident = ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']*
-let text = ['a'-'z' 'A'-'Z' '0'-'9' ' ' '-' '<' '>' '=' '+' '*' '/' '&' '|' 
+let ident = ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']*
+let text = ['a'-'z' 'A'-'Z' '0'-'9' ' ' '-' '_' '<' '>' '=' '+' '*' '/' '&' '|'
             '%' '{' '}' '.' ';' ':' '(' ')' '^' '%' '$' ',' '\\' '[' ']' '!']*
 let whitespace = [' ' '\t' '\n']
 
@@ -45,6 +45,7 @@ rule token = parse
   | "then"                        { THEN }
   | "else"                        { ELSE }
   | "let"                         { LET }
+  | "val"                         { VAL }
   | "in"                          { IN }
   | "fn"                          { LAMBDA }
   | "where"                       { WHERE }
