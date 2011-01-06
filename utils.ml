@@ -16,17 +16,3 @@ let rec zip l1 l2 = match l1, l2 with
     x::xs, y::ys -> (x, y) :: zip xs ys
   | [], [] -> []
   | _, _ -> []
-
-let rec replace_top a b l = match l with
-    x::xs ->
-      if x = a
-      then b :: xs
-      else x :: replace_top a b xs
-  | [] -> []
-
-let rec replace_top_by fn a b l = match l with
-    x::xs ->
-      if fn a x
-      then b :: xs
-      else x :: replace_top_by fn a b xs
-  | [] -> []

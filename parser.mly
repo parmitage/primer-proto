@@ -83,7 +83,7 @@ expr:
 ;
 
 identifier:
-  SYMBOL                                                { Symbol $1 }
+  SYMBOL                                                { Symbol (Symtbl.intern $1) }
 ;
 
 list:

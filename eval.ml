@@ -1,8 +1,6 @@
 (* TODO
    - convert all examples
    - tests
-   - symbol interning
-   - environments are inefficient due to deep lookups
    - environment.lookup is inefficient as it does a double scan of the environment
 *)
 
@@ -10,7 +8,6 @@ open Type
 open Utils
 
 let rec pprint exp = match exp with
-  | Symbol s -> Format.print_string s
   | Int i -> Format.print_int i
   | Float f -> Format.print_float f
   | Char c -> Format.print_char c
@@ -24,29 +21,6 @@ and pprint_list l =
   Format.print_char '[';
   ignore (List.map pprint (intersperse (String ", ") l)) ;
   Format.print_char ']'
-
-module Environment = struct
-  let symbol_eq sym1 sym2 = match sym1, sym2 with
-    | Symbol str1, Symbol str2 -> str1 = str2
-    | _ -> raise Type_mismatch
-  let definition_eq sym def = match sym, def with
-    | Symbol str1, Def(sym2, exp) -> symbol_eq sym sym2
-    | _ -> raise Type_mismatch
-  let symbol_bound sym env = List.exists (fun b -> definition_eq sym b) env
-  let lookup sym env =
-    if symbol_bound sym env
-    then match List.find (fun b -> definition_eq sym b) env with
-      | Def(s, v) -> v
-      | _ -> raise Type_mismatch
-    else raise Symbol_unbound
-  let bind p a e = List.append (List.map2 (fun sym a -> Def(sym, a)) p a) e
-  let rebind params args env =
-    let rebind_one sym exp env =
-      replace_top_by definition_eq sym (Def(sym, exp)) env in
-    List.fold_left
-      (fun env (sym, exp) -> rebind_one sym exp env)
-      env (zip params args)
-end
 
 let unary_op oper arg =  match oper, arg with
   | Not, Bool x -> Bool(not x)
@@ -125,18 +99,14 @@ let bitwise_op oper lhs rhs =  match oper, lhs, rhs with
   | _ -> raise Type_mismatch
 
 let head exp = match exp with
-  | List l -> begin match l with
-      | [] -> List []
-      | x::xs -> x
-  end
+  | List(x::xs) -> x
+  | List([]) -> List []
   | String s -> Char(String.get s 0)
   | _ -> raise Type_mismatch
     
 let tail exp = match exp with
-  | List l -> begin match l with
-      | [] -> List []
-      | x::xs -> List(xs)
-  end
+  | List(x::xs) -> List(xs)
+  | List([]) -> List []
   | String s -> String(String.sub s 1 ((String.length s) - 1))
   | _ -> raise Type_mismatch
 
@@ -168,11 +138,11 @@ let cast f t = match f, t with
   | _ -> raise Invalid_cast
 
 let is lhs typ = match lhs, typ with
-  | Int _, Type TInt -> Bool(true)
-  | Float _, Type TFloat -> Bool(true)
-  | Char _, Type TChar -> Bool(true)
-  | Bool _, Type TBool -> Bool(true)
-  | String _, Type TString -> Bool(true)
+  | Int _, Type TInt
+  | Float _, Type TFloat
+  | Char _, Type TChar
+  | Bool _, Type TBool
+  | String _, Type TString
   | List _, Type TList -> Bool(true)
   | _, _ -> Bool(false)
 
@@ -181,26 +151,17 @@ let show exp = pprint exp; Format.print_newline(); exp
 let is_primitive_list l =
   List.for_all
     (fun e -> match e with
-      | Int _ -> true
-      | Float _ -> true
-      | Char _ -> true
-      | Bool _ -> true
-      | String _ -> true
+      | Int _ | Float _ | Char _ | Bool _ -> true | String _ -> true
       | _ -> false) l
 
 let rec eval exp env =  match exp with
+  | Int _ | Float _ | Char _ | Bool _ | String _ | Closure _ | Type _ -> exp
   | Symbol s -> eval (Environment.lookup exp env) env
-  | Int i -> exp
-  | Float f -> exp
-  | Char c -> exp
-  | Bool b -> exp
-  | String s -> exp
   | List l -> if is_primitive_list l then exp else List(evlis l env)
-  | If(p, c, a) -> condition exp env
+  | If _ -> condition exp env
   | Let(s, e1, e2) -> plet s e1 e2 env
   | Lambda(p, b) -> Closure(p, b, env)
-  | Closure(p, b, e) -> exp
-  | Def(s, e) -> eval e env
+  | Def(_, e) -> eval e env
   | Apply(s, a) -> apply (eval s env) (evlis a env) env
   | UniOp(o, arg) -> unary_op o (eval arg env)
   | BinOp(o, lhs, rhs) -> binary_op o (eval lhs env) (eval rhs env)
@@ -213,7 +174,6 @@ let rec eval exp env =  match exp with
   | Show exp -> show (eval exp env)
   | Rnd i -> random (eval i env)
   | Cast(f, t) -> cast (eval f env) (eval t env)
-  | Type _ -> exp
 and apply f args env = match f with
   |  Closure(p, b, ce) -> eval b (Environment.bind p args ce)
   | _ -> raise Type_mismatch
@@ -228,15 +188,15 @@ and condition exp env =
     | _ -> raise Type_mismatch
 
 let initial_toplevel env = 
-  Def(Symbol("int"), Type(TInt))
-  :: Def(Symbol("float"), Type(TFloat))
-  :: Def(Symbol("char"), Type(TChar))
-  :: Def(Symbol("bool"), Type(TBool))
-  :: Def(Symbol("string"), Type(TString))
-  :: Def(Symbol("list"), Type(TList))
-  :: Def(Symbol("lambda"), Type(TLambda))
-  :: Def(Symbol("newline"), Char('\n'))
-  :: Def(Symbol("tab"), Char('\t'))
+  Def(Symbol(Symtbl.intern("int")), Type(TInt))
+  :: Def(Symbol(Symtbl.intern("float")), Type(TFloat))
+  :: Def(Symbol(Symtbl.intern("char")), Type(TChar))
+  :: Def(Symbol(Symtbl.intern("bool")), Type(TBool))
+  :: Def(Symbol(Symtbl.intern("string")), Type(TString))
+  :: Def(Symbol(Symtbl.intern("list")), Type(TList))
+  :: Def(Symbol(Symtbl.intern("lambda")), Type(TLambda))
+  :: Def(Symbol(Symtbl.intern("newline")), Char('\n'))
+  :: Def(Symbol(Symtbl.intern("tab")), Char('\t'))
   :: env    
 
 let error msg = Format.printf "@[error: %s@]@." msg

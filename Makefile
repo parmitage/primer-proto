@@ -7,7 +7,7 @@ debug:
 	ocamlc -c lexer.ml
 	ocamlc -c utils.ml
 	ocamlc -c eval.ml
-	ocamlc -o primer.exe type.cmo lexer.cmo parser.cmo utils.cmo eval.cmo
+	ocamlc -o primer type.cmo lexer.cmo parser.cmo utils.cmo eval.cmo
 
 release:
 	ocamlopt -c type.ml
