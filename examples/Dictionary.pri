@@ -1,39 +1,37 @@
-Add: fn (d, key, val) d ++ [[key, val]] end
+val add = fn (d, k, v) d ++ [[k, v]];
 
-Get: fn (d, key)
+val get = fn (d, k)
+   let v = FindByFn(k, fn (x) x at 0, d) in
    if v != false then Head(Tail(v))
-   else []
-   where v: FindByFn(key, fn (x) x at 0 end, d)
-end
+   else [];
 
-Update: fn (ds, key, val)
-   if Head(ds) != [] then
-      if Head(Head(ds)) == key then
-         Add(Tail(ds), key, val)
-      else Head(ds) :: Update(Tail(ds), key, val)
-   else Head(ds)
-end
+val update = fn (ds, k, v)
+   if Head(ds) != []
+   then if Head(Head(ds)) == k
+        then add(Tail(ds), k, v)
+        else Head(ds) :: update(Tail(ds), k, v)
+   else Head(ds);
 
-Remove: fn (ds, key)
-   if Head(ds) != [] then
-      if Head(Head(ds)) == key then Tail(ds)
-      else Head(ds) :: Remove(Tail(ds), key)
-   else Head(ds)
-end
+val remove = fn (ds, k)
+   if Head(ds) != []
+   then if Head(Head(ds)) == k
+        then Tail(ds)
+        else Head(ds) :: remove(Tail(ds), k)
+   else Head(ds);
 
-d: []
-d1: Add(d, "one", 1)
-d2: Add(d1, "two", 2)
-d3: Add(d2, "three", 3)
+val d = [];
+val d1 = add(d, "one", 1);
+val d2 = add(d1, "two", 2);
+val d3 = add(d2, "three", 3);
 
-Show(d3)
-Show(Get(d3, "one"))
-Show(Get(d3, "four"))
-Show(Update(d3, "one", 5))
-Show(Update(d3, "two", 5))
-Show(Update(d3, "three", 5))
-Show(Update(d3, "four", 5))
-Show(Remove(d3, "one"))
-Show(Remove(d3, "two"))
-Show(Remove(d3, "three"))
-Show(Remove(d3, "four"))
+d3;
+get(d3, "one");
+get(d3, "four");
+update(d3, "one", 5);
+update(d3, "two", 5);
+update(d3, "three", 5);
+update(d3, "four", 5);
+remove(d3, "one");
+remove(d3, "two");
+remove(d3, "three");
+remove(d3, "four");

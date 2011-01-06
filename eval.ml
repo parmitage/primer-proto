@@ -1,7 +1,13 @@
 (* TODO
    - convert all examples
+   - multi-line comments
    - tests
-   - environment.lookup is inefficient as it does a double scan of the environment
+   - Environment.lookup is inefficient as it does a double scan of the environment
+   - .mli
+   - better build system
+   - symtbl increments symbol in intern even when it's already present
+   - native binaries on Windows
+   - parse error sometimes unhandled (sequence of exceptions)
 *)
 
 open Type
@@ -14,8 +20,7 @@ let rec pprint exp = match exp with
   | Bool b -> Format.print_bool b
   | String s -> Format.print_string s
   | List l -> pprint_list l
-  | Lambda(p, b) -> Format.print_string "#<lambda>"
-  | Closure(p, b, e) -> Format.print_string "#<closure>"
+  | Lambda _ | Closure _ -> Format.print_string "#<function>"
   | _ -> Format.print_string "#<builtin>"
 and pprint_list l =
   Format.print_char '[';
@@ -151,7 +156,7 @@ let show exp = pprint exp; Format.print_newline(); exp
 let is_primitive_list l =
   List.for_all
     (fun e -> match e with
-      | Int _ | Float _ | Char _ | Bool _ -> true | String _ -> true
+      | Int _ | Float _ | Char _ | Bool _ | String _ -> true
       | _ -> false) l
 
 let rec eval exp env =  match exp with
@@ -188,16 +193,15 @@ and condition exp env =
     | _ -> raise Type_mismatch
 
 let initial_toplevel env = 
-  Def(Symbol(Symtbl.intern("int")), Type(TInt))
-  :: Def(Symbol(Symtbl.intern("float")), Type(TFloat))
-  :: Def(Symbol(Symtbl.intern("char")), Type(TChar))
-  :: Def(Symbol(Symtbl.intern("bool")), Type(TBool))
-  :: Def(Symbol(Symtbl.intern("string")), Type(TString))
-  :: Def(Symbol(Symtbl.intern("list")), Type(TList))
-  :: Def(Symbol(Symtbl.intern("lambda")), Type(TLambda))
-  :: Def(Symbol(Symtbl.intern("newline")), Char('\n'))
-  :: Def(Symbol(Symtbl.intern("tab")), Char('\t'))
-  :: env    
+  Def(Symbol(Symtbl.intern("int")), Type(TInt)) ::
+    Def(Symbol(Symtbl.intern("float")), Type(TFloat)) ::
+    Def(Symbol(Symtbl.intern("char")), Type(TChar)) ::
+    Def(Symbol(Symtbl.intern("bool")), Type(TBool)) ::
+    Def(Symbol(Symtbl.intern("string")), Type(TString)) ::
+    Def(Symbol(Symtbl.intern("list")), Type(TList)) ::
+    Def(Symbol(Symtbl.intern("lambda")), Type(TLambda)) ::
+    Def(Symbol(Symtbl.intern("newline")), Char('\n')) ::
+    Def(Symbol(Symtbl.intern("tab")), Char('\t')) :: env    
 
 let error msg = Format.printf "@[error: %s@]@." msg
 let interactive = Array.length Sys.argv == 1

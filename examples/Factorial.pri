@@ -1,18 +1,19 @@
-# This version will overflow stack on larger values.
-Fac1: fn (n)
-   if n == 0 then 1
-   else n * Fac1 (n - 1)
-end
+(* this version will overflow stack on larger values *)
 
-Show(Fac1(10))
+val fac1 = fn (n)
+   if n == 0
+   then 1
+   else n * fac1 (n - 1);
 
-# This version uses an accumulator.
-Fac2: fn (n)
-   Inner (n, 1)
-   where Inner: fn (i, acc)
-            if i == 0 then acc
-            else Inner (i - 1, acc * i)
-         end
-end
+fac1(10);
 
-Show(Fac2(10))
+(* this version uses an accumulator *)
+
+val fac2 = fn (n)
+   let inner = fn (i, acc)
+                  if i == 0
+                  then acc
+                  else inner (i - 1, acc * i)
+   in inner (n, 1);
+
+fac2(10);
