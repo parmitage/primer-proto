@@ -161,7 +161,7 @@ let is_primitive_list l =
       | Int _ | Float _ | Char _ | Bool _ | String _ -> true
       | _ -> false) l
 
-let rec eval exp env =  match exp with
+let rec eval exp env =  (* print_int (List.length env); print_newline(); *) match exp with
   | Int _ | Float _ | Char _ | Bool _ | String _ | Closure _ | Type _ -> exp
   | Symbol s -> eval (Environment.lookup exp env) env
   | List l -> if is_primitive_list l then exp else List(evlis l env)
@@ -182,10 +182,10 @@ let rec eval exp env =  match exp with
   | Rnd i -> random (eval i env)
   | Cast(f, t) -> cast (eval f env) (eval t env)
 and apply f args env = match f with
-  |  Closure(p, b, ce) -> eval b (Environment.bind p args ce)
+  | Closure(p, b, ce) -> eval b (Environment.bind p args ce)
   | _ -> raise Type_mismatch
 and evlis lst env = List.map (fun exp -> eval exp env) lst
-and plet sym exp1 exp2 env = eval exp2 (Def(sym, exp1) :: env)
+and plet sym exp1 exp2 env = eval exp2 (Environment.bind [sym] [exp1] env)
 and condition exp env =
   match exp with
     | If(p, c, a) -> begin match (eval p env) with

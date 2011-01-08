@@ -16,3 +16,10 @@ let rec zip l1 l2 = match l1, l2 with
     x::xs, y::ys -> (x, y) :: zip xs ys
   | [], [] -> []
   | _, _ -> []
+
+let rec replace_one_by fn a b l = match l with
+    x::xs ->
+      if fn a x
+      then b :: xs
+      else x :: replace_one_by fn a b xs
+  | [] -> []

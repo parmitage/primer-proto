@@ -5,9 +5,11 @@ val Assert = fn (id, act, exp)
    else true;
 
 val Map = fn (f, xs)
-   if Head(xs) == []
-   then []
-   else f(Head(xs)) :: Map(f, Tail(xs));
+   let inner = fn (xs, accum)
+      if Head(xs) != []
+      then inner(Tail(xs), f(Head(xs)) :: accum)
+      else Reverse(accum) in
+   inner(xs, []);
 
 val FoldL = fn (f, init, xs)
    if Head(xs) != []
@@ -15,11 +17,13 @@ val FoldL = fn (f, init, xs)
    else init;
 
 val Filter = fn (f, xs)
-   if Head(xs) != []
-   then if f(Head(xs))
-        then Head(xs) :: Filter(f, Tail(xs))
-        else Filter(f, Tail(xs))
-   else [];
+   let inner = fn (ys, accum)
+      if Head(ys) != []
+      then if f(Head(ys))
+           then inner(Tail(ys), accum ++ [Head(ys)])
+           else inner(Tail(ys), accum)
+      else accum
+   in inner(xs, []);
 
 val FoldR = fn (f, init, xs)
    if Head(xs) != []
@@ -28,9 +32,9 @@ val FoldR = fn (f, init, xs)
 
 val Reverse = fn (xs)
    let Inner = fn (xs, accum)
-                  if Head(xs) != []
-                  then Inner(Tail(xs), Head(xs) :: accum)
-                  else accum
+      if Head(xs) != []
+      then Inner(Tail(xs), Head(xs) :: accum)
+      else accum
    in Inner(xs, []);
 
 val Find = fn (a, xs)
@@ -83,11 +87,11 @@ val All = fn (pred, xs)
    else true;
 
 val Take = fn (n, xs)
-   let Inner = fn (a, xs)
-                  if Head(xs) != [] and a < n
-                  then Head(xs) :: Inner(a + 1, Tail(xs))
-                  else []
-   in Inner(0, xs);
+   let Inner = fn (c, xs, ac)
+      if Head(xs) != [] and c < n
+      then Inner(c + 1, Tail(xs), Head(xs) :: ac)
+      else Reverse(ac)
+   in Inner(0, xs, []);
 
 val TakeWhile = fn (f, xs)
    if Head(xs) != [] and f(Head(xs))
@@ -96,11 +100,11 @@ val TakeWhile = fn (f, xs)
 
 val Drop = fn (n, xs)
    let Inner = fn (a, xs)
-                   if Head(xs) != []
-                   then if a < n
-                        then Inner(a + 1, Tail(xs))
-                        else xs
-                   else xs
+      if Head(xs) != []
+      then if a < n
+           then Inner(a + 1, Tail(xs))
+           else xs
+      else xs
    in if n >= Length(xs)
       then []
       else Inner(0, xs);
@@ -147,12 +151,14 @@ val BitSet = fn (n, b) (n & (1 << b)) > 0;
 
 val Collect = fn (f, n)
    let Inner = fn (f, c)
-                  if c < n
-                  then f() :: Inner(f, c + 1)
-                  else []
+      if c < n
+      then f() :: Inner(f, c + 1)
+      else []
    in Inner(f, 0);
 
 val MapPair = fn (f, xs)
-   if Length(xs) >= 2
-   then f(Head(xs), xs at 1) :: MapPair(f, Drop(2, xs))
-   else [];
+   let inner = fn (f, xs, ac)
+      if Length(xs) >= 2
+      then inner(f, Drop(2, xs), f(Head(xs), xs at 1) :: ac)
+      else Reverse(ac)
+   in inner(f, xs, []);
