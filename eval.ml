@@ -1,6 +1,6 @@
 (* TODO
-   - convert all examples
-   - multi-line comments
+   - ' in comments (or better way of handling wildcard char)
+   - knapsack example
    - tests
    - Environment.lookup is inefficient as it does a double scan of the environment
    - .mli
@@ -8,6 +8,7 @@
    - symtbl increments symbol in intern even when it's already present
    - native binaries on Windows
    - parse error sometimes unhandled (sequence of exceptions)
+   - docs
 *)
 
 open Type
@@ -39,9 +40,8 @@ let rec eq lhs rhs = match lhs, rhs with
   | Float x, Float y -> x == y
   | Int x, Float y -> float_of_int x == y
   | Float x, Int y -> x == float_of_int y
-  | Char x, Char y -> x == y
+  | Char x, Char y -> x = y
   | Bool x, Bool y -> x == y
-  | Symbol x, Symbol y -> x == y
   | List xs1, List xs2 -> list_eq xs1 xs2
   | String s1, String s2 -> s1 = s2
   | _, _ -> false
@@ -106,12 +106,14 @@ let bitwise_op oper lhs rhs =  match oper, lhs, rhs with
 let head exp = match exp with
   | List(x::xs) -> x
   | List([]) -> List []
+  | String "" -> List []
   | String s -> Char(String.get s 0)
   | _ -> raise Type_mismatch
     
 let tail exp = match exp with
   | List(x::xs) -> List(xs)
   | List([]) -> List []
+  | String "" -> List []
   | String s -> String(String.sub s 1 ((String.length s) - 1))
   | _ -> raise Type_mismatch
 

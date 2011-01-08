@@ -1,5 +1,3 @@
-(* 18.737s *)
-
 val binarySearch = fn (xs, x)
    let inner = fn (xs, x, s, e)
                   let diff = e - s in

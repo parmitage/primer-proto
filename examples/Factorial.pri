@@ -1,4 +1,4 @@
-(* this version will overflow stack on larger values *)
+# this version will overflow stack on larger values
 
 val fac1 = fn (n)
    if n == 0
@@ -7,7 +7,7 @@ val fac1 = fn (n)
 
 fac1(10);
 
-(* this version uses an accumulator *)
+# this version uses an accumulator
 
 val fac2 = fn (n)
    let inner = fn (i, acc)

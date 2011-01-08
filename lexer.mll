@@ -5,13 +5,13 @@
 }
 
 let digit = ['0'-'9']
-let ident = ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let text = ['a'-'z' 'A'-'Z' '0'-'9' ' ' '-' '_' '<' '>' '=' '+' '*' '/' '&' '|'
-            '%' '{' '}' '.' ';' ':' '(' ')' '^' '%' '$' ',' '\\' '[' ']' '!']*
+let ident = ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9']*
+let text = ['a'-'z' 'A'-'Z' '0'-'9' ' ' '-' '_' '<' '>' '=' '+' '*' '/' '&'
+            '|' '?' '!' '%' '{' '}' '.' ';' ':' '(' ')' '^' '%' '$' ',' '\\'
+            '[' ']' '!' '#' '@' '"']*
 let whitespace = [' ' '\t' '\n']
 
 rule token = parse
-  | "(*" text* "*)"               { token lexbuf }
   | "++"                          { APPEND }
   | '+'                           { PLUS }
   | '-'                           { MINUS }
@@ -61,6 +61,7 @@ rule token = parse
   | "Rnd"                         { RND }
   | "Type"                        { TYPE }
   | "Length"                      { LENGTH }
+  | '#' text* '\n'?               { token lexbuf }
   | ''' text ''' as lxm           { CHAR(String.get lxm 1) }
   | '"' text* '"' as lxm          { STRING(String.sub lxm 1 (String.length lxm - 2)) }
   | whitespace                    { token lexbuf }
