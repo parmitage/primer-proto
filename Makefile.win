@@ -1,3 +1,6 @@
+BIN    = primer.exe
+LFLAGS = -cclib "-L C:\cygwin\lib\mingw -L C:\cygwin\lib\w32api"
+
 debug:
 	ocamlc -c utils.ml
 	ocamlc -c type.ml
@@ -9,7 +12,7 @@ debug:
 	ocamllex lexer.mll
 	ocamlc -c lexer.ml
 	ocamlc -c eval.ml
-	ocamlc -o primer utils.cmo type.cmo symtbl.cmo environment.cmo parser.cmo lexer.cmo eval.cmo
+	ocamlc -o $(BIN) utils.cmo type.cmo symtbl.cmo environment.cmo parser.cmo lexer.cmo eval.cmo
 
 release:
 	ocamlopt -c utils.ml
@@ -18,14 +21,16 @@ release:
 	ocamlopt -c environment.ml
 	ocamlyacc parser.mly
 	ocamlopt -c parser.mli
-	ocamlopt -c parser.ml
 	ocamllex lexer.mll
-	ocamlopt -c lexer.ml
-	ocamlopt -c eval.ml
-	ocamlopt -o primer utils.ml type.ml symtbl.ml environment.ml parser.ml lexer.ml eval.ml
+	ocamlopt $(LFLAGS) -o $(BIN) utils.ml type.ml symtbl.ml environment.ml parser.ml lexer.ml eval.ml
 
 clean:
-	rm primer lexer.ml parser.ml parser.mli *.cmo *.cmi *.o *.cmx
-
-docs:
-	pandoc readme.md -o index.html -c doc.css
+	del primer.exe
+	del lexer.ml
+	del parser.ml
+	del parser.mli
+	del *.cmo
+	del *.cmi
+	del *.o
+	del *.cmx
+	del *.obj

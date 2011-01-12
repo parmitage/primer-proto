@@ -1,14 +1,10 @@
 (* TODO
    - ' in comments (or better way of handling wildcard char)
-   - knapsack example
    - tests
    - Environment.lookup is inefficient as it does a double scan of the environment
    - .mli
    - better build system
    - symtbl increments symbol in intern even when it's already present
-   - native binaries on Windows
-   - parse error sometimes unhandled (sequence of exceptions)
-   - docs
 *)
 
 open Type
@@ -161,7 +157,7 @@ let is_primitive_list l =
       | Int _ | Float _ | Char _ | Bool _ | String _ -> true
       | _ -> false) l
 
-let rec eval exp env =  (* print_int (List.length env); print_newline(); *) match exp with
+let rec eval exp env =  match exp with
   | Int _ | Float _ | Char _ | Bool _ | String _ | Closure _ | Type _ -> exp
   | Symbol s -> eval (Environment.lookup exp env) env
   | List l -> if is_primitive_list l then exp else List(evlis l env)
@@ -215,10 +211,11 @@ let lexbuf =
 
 let rec repl env =
   if interactive then Format.print_string "> "; Format.print_flush();
-  let result = Parser.main Lexer.token lexbuf in
-  try match result with
-    | Def(s, e) -> repl (Def(s, e) :: env)
-    | _ -> ignore(show (eval result env)); repl env
+  try
+    let result = Parser.main Lexer.token lexbuf in
+    match result with
+      | Def(s, e) -> repl (Def(s, e) :: env)
+      | _ -> ignore(show (eval result env)); repl env
   with
     | Symbol_unbound -> error "unbound symbol"; repl env
     | Type_mismatch -> error "type mismatch"; repl env
