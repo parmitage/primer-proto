@@ -59,9 +59,11 @@ val Replace = fn (a, b, xs)
    else [];
 
 val Sum = fn (xs)
-  if Head(xs) != []
-  then Head(xs) + Sum(Tail(xs))
-  else 0;
+   let inner = fn (xs, accum)
+      if Head(xs) != []
+      then inner(Tail(xs), Head(xs) + accum)
+      else accum
+   in inner(xs, 0);
 
 val Product = fn (xs)
    let Inner = fn (xs)
@@ -116,6 +118,16 @@ val DropWhile = fn (f, xs)
         else xs
    else Tail(xs);
 
+val Partition = fn (f, xs)
+   let inner = fn (ts, fs, xs)
+      if Head(xs) != []
+      then if f(Head(xs))
+           then inner(Head(xs) :: ts, fs, Tail(xs))
+           else inner(ts, Head(xs) :: fs, Tail(xs))
+      else [ts, fs]
+   in inner([], [], xs);
+
+### Simple QuickSort - fast for short lists
 val Sort = fn (xs)
    let Lt = fn (a) a < Head(xs) in
    let Gte = fn (a) a >= Head(xs) in
@@ -123,12 +135,35 @@ val Sort = fn (xs)
    then Sort(Filter(Lt, Tail(xs))) ++ [Head(xs)] ++ Sort(Filter(Gte, Tail(xs)))
    else [];
 
+### Tail recursive QuickSort using CPS - OK for longer lists
+val QSort = fn (xs)
+   let loop = fn (xs, cont)
+      if Head(xs) == []
+      then cont([])
+      else let x = Head(xs) in
+           let xss = Tail(xs) in
+           let parts = Partition(fn (y) x > y, xss) in
+           loop(parts at 0, fn (lacc)
+           loop(parts at 1, fn (racc) cont(lacc ++ (x :: racc))))
+   in loop(xs, fn (x) x);
+
 val SortBy = fn (xs, f)
    let Lt = fn (a) f(a) < f(Head(xs)) in
    let Gte = fn (a) f(a) >= f(Head(xs)) in
    if Head(xs) != []
    then SortBy(Filter(Lt, Tail(xs)), f) ++ [Head(xs)] ++ SortBy(Filter(Gte, Tail(xs)), f)
    else [];
+
+val QSortBy = fn (xs, f)
+   let loop = fn (xs, cont)
+      if Head(xs) == []
+      then cont([])
+      else let x = Head(xs) in
+           let xss = Tail(xs) in
+           let parts = Partition(fn (y) f(x) > f(y), xss) in
+           loop(parts at 0, fn (lacc)
+           loop(parts at 1, fn (racc) cont(lacc ++ (x :: racc))))
+   in loop(xs, fn (x) x);
 
 val Zip = fn (xs, ys)
    if Head(xs) != [] and Head(ys) != []

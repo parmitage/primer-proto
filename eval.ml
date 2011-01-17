@@ -1,10 +1,7 @@
 (* TODO
-   - ' in comments (or better way of handling wildcard char)
    - tests
-   - Environment.lookup is inefficient as it does a double scan of the environment
    - .mli
    - better build system
-   - symtbl increments symbol in intern even when it's already present
 *)
 
 open Type
@@ -21,7 +18,7 @@ let rec pprint exp = match exp with
   | _ -> Format.print_string "#<builtin>"
 and pprint_list l =
   Format.print_char '[';
-  ignore (List.map pprint (intersperse (String ", ") l)) ;
+  ignore (Utils.map pprint (intersperse (String ", ") l)) ;
   Format.print_char ']'
 
 let unary_op oper arg =  match oper, arg with
@@ -86,7 +83,7 @@ let rec binary_op oper lhs rhs = match oper, lhs, rhs with
   | Or, Bool x, Bool y -> Bool(x || y)
   | App, List xs1, List xs2 -> List(List.append xs1 xs2)
   | App, String s1, String s2 -> String(s1 ^ s2)
-  | Rge, Int x, Int y -> List(List.map (fun i -> Int(i)) (x -- y))
+  | Rge, Int x, Int y -> List(Utils.map (fun i -> Int(i)) (x -- y))
   | Cons, _, List xs -> List(lhs :: xs)
   | Cons, Char c, String s -> String(String.make 1 c ^ s)
   | _ -> raise Type_mismatch
@@ -180,7 +177,7 @@ let rec eval exp env =  match exp with
 and apply f args env = match f with
   | Closure(p, b, ce) -> eval b (Environment.bind p args ce)
   | _ -> raise Type_mismatch
-and evlis lst env = List.map (fun exp -> eval exp env) lst
+and evlis lst env = Utils.map (fun exp -> eval exp env) lst
 and plet sym exp1 exp2 env = eval exp2 (Environment.bind [sym] [exp1] env)
 and condition exp env =
   match exp with

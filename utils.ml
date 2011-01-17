@@ -17,6 +17,12 @@ let rec zip l1 l2 = match l1, l2 with
   | [], [] -> []
   | _, _ -> []
 
+let map f l =
+  let rec inner l accum = match l with
+    | x::xs -> inner xs ((f x) :: accum)
+    | []    -> List.rev accum
+  in inner l [] ;;
+
 let rec replace_one_by fn a b l = match l with
     x::xs ->
       if fn a x
