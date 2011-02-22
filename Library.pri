@@ -1,199 +1,199 @@
-val Empty = fn (xs) Head(xs) == [];
+val empty = fun xs -> head(xs) == [] ;
 
-val Assert = fn (id, act, exp)
-   if act != exp then Show(id)
-   else true;
+val assert = fun id act exp ->
+   if act != exp then show(id)
+   else true ;
 
-val Map = fn (f, xs)
-   let inner = fn (xs, accum)
-      if Head(xs) != []
-      then inner(Tail(xs), f(Head(xs)) :: accum)
-      else Reverse(accum) in
-   inner(xs, []);
+val map = fun f xs ->
+   let inner = fun xs ac ->
+      if head(xs) != []
+      then inner(tail(xs), f(head(xs)) :: ac)
+      else reverse(ac)
+   in inner(xs, []) ;
 
-val FoldL = fn (f, init, xs)
-   if Head(xs) != []
-   then FoldL(f, f(init, Head(xs)), Tail(xs))
-   else init;
+val foldl = fun f init xs ->
+   if head(xs) != []
+   then foldl(f, f(init, head(xs)), tail(xs))
+   else init ;
 
-val Filter = fn (f, xs)
-   let inner = fn (ys, accum)
-      if Head(ys) != []
-      then if f(Head(ys))
-           then inner(Tail(ys), accum ++ [Head(ys)])
-           else inner(Tail(ys), accum)
+val filter = fun f xs ->
+   let inner = fun ys accum ->
+      if head(ys) != []
+      then if f(head(ys))
+           then inner(tail(ys), accum ++ [head(ys)])
+           else inner(tail(ys), accum)
       else accum
-   in inner(xs, []);
+   in inner(xs, []) ;
 
-val FoldR = fn (f, init, xs)
-   if Head(xs) != []
-   then f(Head(xs), FoldR(f, init, Tail(xs)))
-   else init;
+val foldr = fun f init xs ->
+   if head(xs) != []
+   then f(head(xs), foldr(f, init, tail(xs)))
+   else init ;
 
-val Reverse = fn (xs)
-   let Inner = fn (xs, accum)
-      if Head(xs) != []
-      then Inner(Tail(xs), Head(xs) :: accum)
+val reverse = fun xs ->
+   let inner = fun xs accum ->
+      if head(xs) != []
+      then inner(tail(xs), head(xs) :: accum)
       else accum
-   in Inner(xs, []);
+   in inner(xs, []) ;
 
-val Find = fn (a, xs)
-   if Head(xs) == a
-   then Head(xs)
-   else if Tail(xs) != []
-        then Find(a, Tail(xs))
-        else false;
+val find = fun a xs ->
+   if head(xs) == a
+   then head(xs)
+   else if tail(xs) != []
+        then find(a, tail(xs))
+        else false ;
 
-val FindByFn = fn (a, f, xs)
-   if f(Head(xs)) == a
-   then Head(xs)
-   else if Tail(xs) != []
-        then FindByFn(a, f, Tail(xs))
-        else false;
+val findByFun = fun a f xs ->
+   if f(head(xs)) == a
+   then head(xs)
+   else if tail(xs) != []
+        then findByFun(a, f, tail(xs))
+        else false ;
 
-val Replace = fn (a, b, xs)
-   if Head(xs) != []
-   then if Head(xs) == a
-        then b :: Replace(a, b, Tail(xs))
-        else Head(xs) :: Replace(a, b, Tail(xs))
-   else [];
+val replace = fun a b xs ->
+   if head(xs) != []
+   then if head(xs) == a
+        then b :: replace(a, b, tail(xs))
+        else head(xs) :: replace(a, b, tail(xs))
+   else [] ;
 
-val Sum = fn (xs)
-   let inner = fn (xs, accum)
-      if Head(xs) != []
-      then inner(Tail(xs), Head(xs) + accum)
+val sum = fun xs ->
+   let inner = fun xs accum ->
+      if head(xs) != []
+      then inner(tail(xs), head(xs) + accum)
       else accum
-   in inner(xs, 0);
+   in inner(xs, 0) ;
 
-val Product = fn (xs)
-   let Inner = fn (xs)
-                  if Head(xs) != []
-                  then Head(xs) * Inner(Tail(xs))
-                  else 1
-   in if Empty(xs)
+val product = fun xs ->
+   let inner = fun xs ->
+      if head(xs) != []
+      then head(xs) * inner(tail(xs))
+      else 1
+   in if empty(xs)
       then 0
-      else Inner(xs);
+      else inner(xs) ;
 
-val Any = fn (pred, xs)
-   if Head(xs) != []
-   then if pred(Head(xs))
+val any = fun pred xs ->
+   if head(xs) != []
+   then if pred(head(xs))
         then true
-        else Any(pred, Tail(xs))
-   else false;
+        else any(pred, tail(xs))
+   else false ;
 
-val All = fn (pred, xs)
-   if Head(xs) != []
-   then if pred(Head(xs))
-        then All(pred, Tail(xs))
+val all = fun pred xs ->
+   if head(xs) != []
+   then if pred(head(xs))
+        then all(pred, tail(xs))
         else false
-   else true;
+   else true ;
 
-val Take = fn (n, xs)
-   let Inner = fn (c, xs, ac)
-      if Head(xs) != [] and c < n
-      then Inner(c + 1, Tail(xs), Head(xs) :: ac)
-      else Reverse(ac)
-   in Inner(0, xs, []);
+val take = fun n xs ->
+   let inner = fun c xs ac ->
+      if head(xs) != [] and c < n
+      then inner(c + 1, tail(xs), head(xs) :: ac)
+      else reverse(ac)
+   in inner(0, xs, []) ;
 
-val TakeWhile = fn (f, xs)
-   if Head(xs) != [] and f(Head(xs))
-   then Head(xs) :: TakeWhile(f, Tail(xs))
-   else [];
+val takeWhile = fun f xs ->
+   if head(xs) != [] and f(head(xs))
+   then head(xs) :: takeWhile(f, tail(xs))
+   else [] ;
 
-val Drop = fn (n, xs)
-   let Inner = fn (a, xs)
-      if Head(xs) != []
+val drop = fun n xs ->
+   let inner = fun a xs ->
+      if head(xs) != []
       then if a < n
-           then Inner(a + 1, Tail(xs))
+           then inner(a + 1, tail(xs))
            else xs
       else xs
-   in if n >= Length(xs)
+   in if n >= length(xs)
       then []
-      else Inner(0, xs);
+      else inner(0, xs) ;
 
-val DropWhile = fn (f, xs)
-   if Head(xs) != []
-   then if f(Head(xs))
-        then DropWhile(f, Tail(xs))
+val dropWhile = fun f xs ->
+   if head(xs) != []
+   then if f(head(xs))
+        then dropWhile(f, tail(xs))
         else xs
-   else Tail(xs);
+   else tail(xs) ;
 
-val Partition = fn (f, xs)
-   let inner = fn (ts, fs, xs)
-      if Head(xs) != []
-      then if f(Head(xs))
-           then inner(Head(xs) :: ts, fs, Tail(xs))
-           else inner(ts, Head(xs) :: fs, Tail(xs))
+val partition = fun f xs ->
+   let inner = fun ts fs xs ->
+      if head(xs) != []
+      then if f(head(xs))
+           then inner(head(xs) :: ts, fs, tail(xs))
+           else inner(ts, head(xs) :: fs, tail(xs))
       else [ts, fs]
-   in inner([], [], xs);
+   in inner([], [], xs) ;
 
 ### Simple QuickSort - fast for short lists
-val Sort = fn (xs)
-   let Lt = fn (a) a < Head(xs) in
-   let Gte = fn (a) a >= Head(xs) in
-   if Head(xs) != []
-   then Sort(Filter(Lt, Tail(xs))) ++ [Head(xs)] ++ Sort(Filter(Gte, Tail(xs)))
-   else [];
+val sort = fun xs ->
+   let lt = fun a -> a < head(xs) in
+   let gte = fun a -> a >= head(xs) in
+   if head(xs) != []
+   then sort(filter(lt, tail(xs))) ++ [head(xs)] ++ sort(filter(gte, tail(xs)))
+   else [] ;
 
 ### Tail recursive QuickSort using CPS - OK for longer lists
-val QSort = fn (xs)
-   let loop = fn (xs, cont)
-      if Head(xs) == []
+val qSort = fun xs ->
+   let loop = fun xs cont ->
+      if head(xs) == []
       then cont([])
-      else let x = Head(xs) in
-           let xss = Tail(xs) in
-           let parts = Partition(fn (y) x > y, xss) in
-           loop(parts at 0, fn (lacc)
-           loop(parts at 1, fn (racc) cont(lacc ++ (x :: racc))))
-   in loop(xs, fn (x) x);
+      else let x = head(xs) in
+           let xss = tail(xs) in
+           let parts = partition(fun y -> x > y, xss) in
+           loop(parts at 0, fun lacc ->
+           loop(parts at 1, fun racc -> cont(lacc ++ (x :: racc))))
+   in loop(xs, fun x -> x) ;
 
-val SortBy = fn (xs, f)
-   let Lt = fn (a) f(a) < f(Head(xs)) in
-   let Gte = fn (a) f(a) >= f(Head(xs)) in
-   if Head(xs) != []
-   then SortBy(Filter(Lt, Tail(xs)), f) ++ [Head(xs)] ++ SortBy(Filter(Gte, Tail(xs)), f)
-   else [];
+val sortBy = fun xs f ->
+   let lt = fun a -> f(a) < f(Head(xs)) in
+   let gte = fun a -> f(a) >= f(Head(xs)) in
+   if head(xs) != []
+   then sortBy(filter(lt, tail(xs)), f) ++ [head(xs)] ++ sortBy(filter(gte, tail(xs)), f)
+   else [] ;
 
-val QSortBy = fn (xs, f)
-   let loop = fn (xs, cont)
-      if Head(xs) == []
+val qSortBy = fun xs f ->
+   let loop = fun xs cont ->
+      if head(xs) == []
       then cont([])
-      else let x = Head(xs) in
-           let xss = Tail(xs) in
-           let parts = Partition(fn (y) f(x) > f(y), xss) in
-           loop(parts at 0, fn (lacc)
-           loop(parts at 1, fn (racc) cont(lacc ++ (x :: racc))))
-   in loop(xs, fn (x) x);
+      else let x = head(xs) in
+           let xss = tail(xs) in
+           let parts = partition(fun y -> f(x) > f(y), xss) in
+           loop(parts at 0, fun lacc ->
+           loop(parts at 1, fun racc -> cont(lacc ++ (x :: racc))))
+   in loop(xs, fun x -> x) ;
 
-val Zip = fn (xs, ys)
-   if Head(xs) != [] and Head(ys) != []
-   then [Head(xs), Head(ys)] :: Zip(Tail(xs), Tail(ys))
-   else [];
+val zip = fun xs ys ->
+   if head(xs) != [] and head(ys) != []
+   then [head(xs), head(ys)] :: zip(tail(xs), tail(ys))
+   else [] ;
 
-val Intersperse = fn (sep, xs)
-   if Head(xs) == []
+val intersperse = fun sep xs ->
+   if head(xs) == []
    then []
-   else if Empty(Tail(xs))
-        then [Head(xs)]
-        else Head(xs) :: sep :: Intersperse(sep, Tail(xs));
+   else if empty(tail(xs))
+        then [head(xs)]
+        else head(xs) :: sep :: intersperse(sep, tail(xs)) ;
 
-val Min = fn (xs) Head(Sort(xs));
-val Max = fn (xs) Head(Reverse(Sort(xs)));
-val Last = fn (xs) Head(Reverse(xs));
-val Odd = fn (n) n mod 2 != 0;
-val Even = fn (n) n mod 2 == 0;
-val BitSet = fn (n, b) (n & (1 << b)) > 0;
+val min = fun xs -> head(sort(xs)) ;
+val max = fun xs -> head(reverse(sort(xs))) ;
+val last = fun xs -> head(reverse(xs)) ;
+val odd = fun n -> n mod 2 != 0 ;
+val even = fun n -> n mod 2 == 0 ;
+val bitSet = fun n b -> (n & (1 << b)) > 0 ;
 
-val Collect = fn (f, n)
-   let Inner = fn (f, c)
+val collect = fun f n ->
+   let inner = fun f c ->
       if c < n
-      then f() :: Inner(f, c + 1)
+      then f() :: inner(f, c + 1)
       else []
-   in Inner(f, 0);
+   in inner(f, 0) ;
 
-val MapPair = fn (f, xs)
-   let inner = fn (f, xs, ac)
-      if Length(xs) >= 2
-      then inner(f, Drop(2, xs), f(Head(xs), xs at 1) :: ac)
-      else Reverse(ac)
-   in inner(f, xs, []);
+val mapPair = fun f xs ->
+   let inner = fun f xs ac ->
+      if length(xs) >= 2
+      then inner(f, drop(2, xs), f(head(xs), xs at 1) :: ac)
+      else reverse(ac)
+   in inner(f, xs, []) ;

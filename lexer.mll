@@ -45,7 +45,8 @@ rule token = parse
   | "let"                         { LET }
   | "val"                         { VAL }
   | "in"                          { IN }
-  | "fn"                          { LAMBDA }
+  | "fun"                         { LAMBDA }
+  | "->"                          { DEFINED }
   | "where"                       { WHERE }
   | "true"                        { TRUE }
   | "false"                       { FALSE }
@@ -53,12 +54,12 @@ rule token = parse
   | "as"                          { AS }
   | "at"                          { AT }
   | "::"                          { CONS }
-  | "Head"                        { HEAD }
-  | "Tail"                        { TAIL }
-  | "Show"                        { SHOW }
-  | "Rnd"                         { RND }
-  | "Type"                        { TYPE }
-  | "Length"                      { LENGTH }
+  | "head"                        { HEAD }
+  | "tail"                        { TAIL }
+  | "show"                        { SHOW }
+  | "rnd"                         { RND }
+  | "type"                        { TYPE }
+  | "length"                      { LENGTH }
   | '#' any* '\n'?                { token lexbuf }
   | ''' any ''' as lxm            { CHAR(String.get lxm 1) }
   | '"' any* '"' as lxm           { STRING(String.sub lxm 1 (String.length lxm - 2)) }

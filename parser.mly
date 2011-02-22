@@ -8,14 +8,15 @@
 %token <string> SYMBOL STRING
 %token PLUS MINUS TIMES DIV
 %token LPAREN RPAREN LSQUARE RSQUARE COMMA SEMICOLON
-%token PROG DEF LAMBDA LET VAL IN IF THEN ELSE ELIF COND APPLY
+%token PROG DEF DEFINED LAMBDA LET VAL IN IF THEN ELSE ELIF COND APPLY
 %token LT GT GE LE NE EQ NOT AND OR MOD APPEND TRUE FALSE END LIST
 %token HEAD TAIL SHOW RND TYPE IS AS LENGTH AT CONS WHERE RANGE
 %token B_AND B_OR B_XOR B_NOT B_LSHIFT B_RSHIFT
 %token EOL
 
 %nonassoc ELSE
-%left DEF LET VAL IN LPAREN RPAREN NOT B_NOT
+%left IN
+%left LET DEF DEFINED LPAREN RPAREN NOT B_NOT
 %left AND OR APPEND
 %left LT GT GE LE EQ NE RANGE
 %left PLUS MINUS
@@ -44,7 +45,7 @@ expr:
   | identifier                                          { $1 }
   | LET identifier DEF expr IN expr                     { Let($2, $4, $6) }
   | VAL identifier DEF expr                             { Def($2, $4) }
-  | LAMBDA LPAREN list RPAREN expr                      { Lambda($3, $5) }
+  | LAMBDA args DEFINED expr                            { Lambda($2, $4) }
   | identifier LPAREN list RPAREN                       { Apply($1, $3) }
   | IF expr THEN expr ELSE expr                         { If($2, $4, $6) }
   | expr CONS expr                                      { BinOp(Cons, $1, $3) }
@@ -84,6 +85,11 @@ expr:
 
 identifier:
   SYMBOL                                                { Symbol (Symtbl.intern $1) }
+;
+
+args:
+  identifier                                            { [$1] }
+  | identifier args                                     { $1 :: $2 }
 ;
 
 list:
