@@ -1,5 +1,5 @@
-val binarySearch = fn (xs, x)
-   let inner = fn (xs, x, s, e)
+val binarySearch = fun xs x ->
+   let inner = fun xs x s e ->
                   let diff = e - s in
                   let mid = (diff / 2) as int in
                   let idx = s + mid in
@@ -11,7 +11,7 @@ val binarySearch = fn (xs, x)
                             then inner(xs, x, s, e - 1)
                             else inner(xs, x, s + 1, e)
                   else false
-   in inner(xs, x, 0, Length(xs) - 1);
+   in inner(xs, x, 0, length(xs) - 1);
 
 val listToSearch = 1..1000;
 

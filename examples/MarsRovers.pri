@@ -28,30 +28,30 @@ val s = 1;
 val e = 2;
 val n = 3;
 
-val rover = fn (x, y, h) [x, y, h];
-val roverX = fn (r) r at 0;
-val roverY = fn (r) r at 1;
-val roverH = fn (r) r at 2;
+val rover = fun x y h -> [x, y, h];
+val roverX = fun r -> r at 0;
+val roverY = fun r -> r at 1;
+val roverH = fun r -> r at 2;
 
-val print = fn (r)
+val print = fun r ->
    let x = roverX(r) in
    let y = roverY(r) in
    let d = (['W', 'S', 'E', 'N'] at roverH(r)) in
    [x, y, d];
 
-val navigate = fn (r, s) FoldL(move, r, s);
+val navigate = fun r s -> foldl(move, r, s);
 
-val move = fn (r, c)
+val move = fun r c ->
    if c == 'L' or c == 'R'
    then rotate(r, c)
    else translate(r, c as int - '0' as int);
 
-val translate = fn (r, c)
-   if Even(roverH(r))
+val translate = fun r c ->
+   if even(roverH(r))
    then rover(roverX(r) + ((roverH(r) - 1) * c), roverY(r), roverH(r))
    else rover(roverX(r), roverY(r) + ((roverH(r) - 2) * c), roverH(r));
 
-val rotate = fn (r, d)
+val rotate = fun r d ->
    if d == 'L'
    then rover(roverX(r), roverY(r), (roverH(r) + 1) mod 4)
    else rover(roverX(r), roverY(r), (if roverH(r) - 1 == 0
