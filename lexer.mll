@@ -48,6 +48,8 @@ rule token = parse
   | "fun"                         { LAMBDA }
   | "->"                          { DEFINED }
   | "where"                       { WHERE }
+  | "begin"                       { BEGIN }
+  | "end"                         { END }
   | "true"                        { TRUE }
   | "false"                       { FALSE }
   | "is"                          { IS }

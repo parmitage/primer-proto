@@ -8,7 +8,7 @@
 %token <string> SYMBOL STRING
 %token PLUS MINUS TIMES DIV
 %token LPAREN RPAREN LSQUARE RSQUARE COMMA SEMICOLON
-%token PROG DEF DEFINED LAMBDA LET VAL IN IF THEN ELSE ELIF COND APPLY
+%token PROG DEF DEFINED LAMBDA LET VAL IN IF THEN ELSE ELIF COND APPLY BEGIN END
 %token LT GT GE LE NE EQ NOT AND OR MOD APPEND TRUE FALSE END LIST
 %token HEAD TAIL SHOW RND TYPE IS AS LENGTH AT CONS WHERE RANGE
 %token B_AND B_OR B_XOR B_NOT B_LSHIFT B_RSHIFT
@@ -54,6 +54,7 @@ expr:
   | HEAD LPAREN expr RPAREN                             { Head $3 }
   | TAIL LPAREN expr RPAREN                             { Tail $3 }
   | RND LPAREN expr RPAREN                              { Rnd $3 }
+  | BEGIN seq END                                       { Seq $2 }
   | expr PLUS expr                                      { BinOp(Add, $1, $3) }
   | expr MINUS expr                                     { BinOp(Sub, $1, $3) }
   | expr TIMES expr                                     { BinOp(Mul, $1, $3) }
@@ -96,4 +97,9 @@ list:
   expr                                                  { [$1] }
   | expr COMMA list                                     { $1 :: $3 }
   | /* empty list */                                    { [] }
+;
+
+seq:
+  expr                                                  { [$1] }
+  | expr SEMICOLON seq                                  { $1 :: $3 }
 ;

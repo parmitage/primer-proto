@@ -9,7 +9,8 @@ debug:
 	ocamllex lexer.mll
 	ocamlc -c lexer.ml
 	ocamlc -c eval.ml
-	ocamlc -o primer utils.cmo type.cmo symtbl.cmo environment.cmo parser.cmo lexer.cmo eval.cmo
+	ocamlc -c read.ml
+	ocamlc -o primer utils.cmo type.cmo symtbl.cmo environment.cmo parser.cmo lexer.cmo eval.cmo read.cmo
 
 release:
 	ocamlopt -c utils.ml
@@ -22,7 +23,7 @@ release:
 	ocamllex lexer.mll
 	ocamlopt -c lexer.ml
 	ocamlopt -c eval.ml
-	ocamlopt -o primer utils.ml type.ml symtbl.ml environment.ml parser.ml lexer.ml eval.ml
+	ocamlopt -o primer utils.ml type.ml symtbl.ml environment.ml parser.ml lexer.ml eval.ml read.ml
 
 clean:
 	rm primer lexer.ml parser.ml parser.mli *.cmo *.cmi *.o *.cmx

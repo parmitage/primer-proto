@@ -36,3 +36,4 @@ type expression =
   | Cast of expression * expression
   | Def of expression * expression
   | Type of typename
+  | Seq of expression list

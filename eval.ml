@@ -1,9 +1,3 @@
-(* TODO
-   - tests
-   - .mli
-   - better build system
-*)
-
 open Type
 open Utils
 
@@ -174,6 +168,7 @@ let rec eval exp env =  match exp with
   | Show exp -> show (eval exp env)
   | Rnd i -> random (eval i env)
   | Cast(f, t) -> cast (eval f env) (eval t env)
+  | Seq exps -> seq exps env
 and apply f args env = match f with
   | Closure(p, b, ce) -> eval b (Environment.bind p args ce)
   | _ -> raise Type_mismatch
@@ -186,6 +181,10 @@ and condition exp env =
         | _ -> raise Type_mismatch
       end
     | _ -> raise Type_mismatch
+and seq exps env = match exps with
+  | [x] -> eval x env  
+  | x::xs -> ignore (eval x env); seq xs env
+  | _ -> List []
 
 let initial_toplevel env = 
   Def(Symbol(Symtbl.intern("int")), Type(TInt)) ::
@@ -199,36 +198,3 @@ let initial_toplevel env =
     Def(Symbol(Symtbl.intern("tab")), Char('\t')) :: env    
 
 let error msg = Format.printf "@[error: %s@]@." msg
-let interactive = Array.length Sys.argv == 1
-
-let lexbuf =
-  if interactive
-  then Lexing.from_channel stdin
-  else Lexing.from_channel (open_in Sys.argv .(1))
-
-let rec repl env =
-  if interactive then Format.print_string "> "; Format.print_flush();
-  try
-    let result = Parser.main Lexer.token lexbuf in
-    match result with
-      | Def(s, e) -> repl (Def(s, e) :: env)
-      | _ -> ignore(show (eval result env)); repl env
-  with
-    | Symbol_unbound -> error "unbound symbol"; repl env
-    | Type_mismatch -> error "type mismatch"; repl env
-    | Invalid_cast -> error "invalid cast"; repl env
-    | Parsing.Parse_error -> error "parse error"; repl env
-    | Lexer.Eof -> exit 0
-
-let rec load buf env =
-  try let result = Parser.main Lexer.token buf in
-      match result with
-        | Def(s, e) -> load buf (Def(s, e) :: env)
-        | _ -> load buf env
-  with Lexer.Eof -> env
-
-let _ =
-  Random.self_init();
-  let toplevel = initial_toplevel [] in
-  let prelude = load (Lexing.from_channel (open_in "Library.pri")) toplevel in
-  repl prelude ;;
