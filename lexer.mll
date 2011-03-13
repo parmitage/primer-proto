@@ -6,6 +6,7 @@
 
 let digit = ['0'-'9']
 let ident = ['a'-'z' 'A'-'Z']['a'-'z' 'A'-'Z' '0'-'9']*
+let string = [^ '\n' '"']*
 let any = [^ '\t' '\n']
 let whitespace = [' ' '\t' '\n']
 
@@ -64,7 +65,7 @@ rule token = parse
   | "length"                      { LENGTH }
   | '#' any* '\n'?                { token lexbuf }
   | ''' any ''' as lxm            { CHAR(String.get lxm 1) }
-  | '"' any* '"' as lxm           { STRING(String.sub lxm 1 (String.length lxm - 2)) }
+  | '"' string '"' as lxm         { STRING(String.sub lxm 1 (String.length lxm - 2)) }
   | whitespace                    { token lexbuf }
   | digit+ as lxm                 { INT(int_of_string lxm) }
   | digit+ '.' digit+ as lxm      { FLOAT(float_of_string lxm) }
