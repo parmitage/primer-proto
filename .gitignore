@@ -1,5 +1,7 @@
 primer
 *.cm[io]
+*.mli
 *~
 *.DS_Store
 *._d
+._bcdi
