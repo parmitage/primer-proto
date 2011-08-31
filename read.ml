@@ -10,7 +10,7 @@ let base_library =
       Sys.getenv "PRIMER_LIBRARY_PATH"
     with
       | Sys_error _ -> error missing_base_lib; exit 0
-  in Filename.concat lib_dir "base.pri"
+  in Filename.concat lib_dir "lib.pri"
 
 let interactive = Array.length Sys.argv == 1
 
