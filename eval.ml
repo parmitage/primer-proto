@@ -80,7 +80,7 @@ let rec binary_op oper lhs rhs = match oper, lhs, rhs with
   | Rge, Int x, Int y -> List(Utils.map (fun i -> Int(i)) (x -- y))
   | Cons, _, List xs -> List(lhs :: xs)
   | Cons, Char c, String s -> String(String.make 1 c ^ s)
-  | _ -> raise Type_mismatch
+  | _ -> print_string "error in binary_op"; raise Type_mismatch
 
 let bitwise_op oper lhs rhs =  match oper, lhs, rhs with
   | Band, Int x, Int y -> Int(x land y)
