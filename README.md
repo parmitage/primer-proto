@@ -1,10 +1,8 @@
 Primer
 ======
-Primer is a simple functional programming language which I wrote for my own amusement. While it's nothing more than my hobby language, a couple of people have found it worth playing with either to learn functional programming or to study a simple language implementation.
+Primer is a simple programming language which I wrote for my own amusement. While it's nothing more than my hobby language, a couple of people have found it worth playing with either to learn functional programming or to study a simple language implementation.
 
-Primer is dynamically typed, immutable, uses strict evaluation and has higher order functions and closures.
-
-Primer is open source software and distributed under the MIT license. It builds on Linux, Mac and Windows.
+Primer is dynamically typed, immutable, uses strict evaluation and has higher order functions and closures. It's open source software and distributed under the MIT license. Primer builds on Linux, Mac and Windows.
 
 If you have any questions about Primer then please feel free to [email](mailto:philip.armitage@gmail.com) me.
 
@@ -14,7 +12,7 @@ The latest version of Primer can always be found on [GitHub](http://github.com/p
 
 Inside the tarball you'll find the following folders:
 
-src/       - the ML source code for Primer
+src/       - the OCaml source code for Primer
 emacs/     - an Emacs major mode for Primer
 examples/  - some example Primer programs
 README.md  - this file
@@ -42,14 +40,26 @@ Note that this version of Quicksort is nice for showing off how the language loo
 
 Quick start
 -----------
-Primer has a simple REPL which is the quickest way to play with the language. To start the REPL type:
+Primer has a batch interpreter, a REPL and a compiler which currently targets JavaScript. The quickest way to play with the language is in the REPL which you start with:
 
-    ./primer
+    ./pri
 
 Alternatively, to load an existing Primer source file, simply pass it as a command line argument:
 
-    ./primer MyFile.pri
+    ./pri MyFile.pri
 
+To compile a source file:
+
+    ./prc MyFile.pri MyFile.js
+
+Alternatively you can generate a webpage to host the JavaScript:
+
+    ./prc MyFile.pri MyFile.html
+
+Please note that the compiler is a work in progres.
+
+Language reference
+------------------
 Bindings are immutable.
 
     val pi = 3.14159;
@@ -235,18 +245,16 @@ You can of course edit Primer code in any text editor but you will find the begi
 
 History
 -------
-The initial version of Primer was written in C, mainly because I was familiar with Lex and Yacc. This was a very poor reason for choosing an implementation language and I later decided to rewrite the interpreter in something nicer. My choices were between Scheme and an ML family language. I decided to go with ML because at the time Scheme was going through some standardisation pains and it wasn't clear what implementations were going to do. Specifically, I chose OCaml because it seemed to be the most practical dialect of ML. However, I'm considering porting everything to SML (see point 0 in the Future section below). If I do this then hopefully it will be the last time I feel the urge to port it.
+The initial version of Primer was written in C, mainly because I was familiar with Lex and Yacc. This was a very poor reason for choosing an implementation language and I later decided to rewrite the interpreter in something nicer. My choices were between Scheme and an ML family language. I decided to go with ML because at the time Scheme was going through some standardisation pains and it wasn't clear what implementations were going to do. Specifically, I chose OCaml because it seemed to be the most practical dialect of ML.
 
 Future
 ------
-As Primer is my hobby project, I suspect it will never be truly finished because I want to keep fiddling with it.. My current todo list is below although I should stress that I may decide not to do some of these things and I may tackle them in a different order.
-
-0. Re-write in SML. The first version of Primer was written in C for no good reason. The current version is written in OCaml. I'd like to investigate the possibility of rewriting it in SML. I like the orderliness of SML compared to OCaml (it reminds me of Scheme compared to Common Lisp in many ways) but I need to see how practical it is to use for binary distribution of Primer across the three platforms I want to support.
+As Primer is my hobby project, I suspect it will never be truly finished because I want to keep fiddling with it. My current todo list is below although I should stress that I may decide not to do some of these things and I may tackle them in a different order.
 
 1. Add the match statement from the original C implementation of Primer.
 
 2. Add proper library loading from the original C implementation of Primer.
 
-3. A compiler to JavaScript. It seems that everything should target the browser these days so the first compilation target for Primer should be JavaScript.
+3. Complete the JavaScript compiler. Still to implement is library loading, a full prelude and TCO.
 
-4. A compiler to C. Native code compilation would also be nice and C can act as a portable assembler. Another option could be to target LLVM byte-code.
+4. A compiler to C. Native code compilation would be nice and C can act as a portable assembler. Another option could be to target LLVM.
