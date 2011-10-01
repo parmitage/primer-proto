@@ -39,9 +39,9 @@ val Start = Point3D(5, 12, 4);
 val Destination = Start("Transform", 2, 3, 6);
 
 # Query the location of the new point
-Destination("GetX");
-Destination("GetY");
-Destination("GetZ");
+show(Destination("GetX"));
+show(Destination("GetY"));
+show(Destination("GetZ"));
 
 # Call a 'free function' which operates on the 'objects'
-delta3D(Start, Destination);
+show(delta3D(Start, Destination));

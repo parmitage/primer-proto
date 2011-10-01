@@ -10,7 +10,12 @@ debug:
 	ocamlc -c lexer.ml
 	ocamlc -c eval.ml
 	ocamlc -c read.ml
-	ocamlc -o primer utils.cmo type.cmo symtbl.cmo environment.cmo parser.cmo lexer.cmo eval.cmo read.cmo
+	ocamlc -c javascript16.ml
+	ocamlc -c compiler.ml
+	ocamlc -o pri str.cma utils.cmo type.cmo symtbl.cmo environment.cmo \
+		parser.cmo lexer.cmo eval.cmo read.cmo
+	ocamlc -o prc str.cma utils.cmo type.cmo symtbl.cmo environment.cmo \
+		parser.cmo lexer.cmo javascript16.cmo compiler.cmo
 
 release:
 	ocamlopt -c utils.ml
@@ -23,10 +28,11 @@ release:
 	ocamllex lexer.mll
 	ocamlopt -c lexer.ml
 	ocamlopt -c eval.ml
-	ocamlopt -o primer utils.ml type.ml symtbl.ml environment.ml parser.ml lexer.ml eval.ml read.ml
+	ocamlopt -o pri str.cmxa utils.ml type.ml symtbl.ml environment.ml \
+		parser.ml lexer.ml eval.ml read.ml
 
 clean:
-	rm primer lexer.ml parser.ml parser.mli *.cmo *.cmi *.o *.cmx
+	rm pri prc lexer.ml parser.ml parser.mli *.cmo *.cmi *.o *.cmx
 
 docs:
 	pandoc readme.md -o index.html -c doc.css

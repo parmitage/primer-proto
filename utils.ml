@@ -1,3 +1,5 @@
+open Str
+
 let rec take_while p lst = match lst with 
   | [] -> []
   | x::xs -> if p x then x :: (take_while p xs) else []
@@ -23,9 +25,18 @@ let map f l =
     | []    -> List.rev accum
   in inner l [] ;;
 
+let last l = List.hd (List.rev l)
+
 let rec replace_one_by fn a b l = match l with
     x::xs ->
       if fn a x
       then b :: xs
       else x :: replace_one_by fn a b xs
   | [] -> []
+
+let split_str sep str =
+  Str.split (Str.regexp_string sep) str
+
+let error msg = Format.printf "@[error: %s@]@." msg
+
+let (%) = Printf.sprintf

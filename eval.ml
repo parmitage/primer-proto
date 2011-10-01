@@ -1,15 +1,16 @@
 open Type
 open Utils
 
-let rec pprint exp = match exp with
-  | Int i -> Format.print_int i
-  | Float f -> Format.print_float f
-  | Char c -> Format.print_char c
-  | Bool b -> Format.print_bool b
-  | String s -> Format.print_string s
-  | List l -> pprint_list l
-  | Lambda _ | Closure _ -> Format.print_string "#<function>"
-  | _ -> Format.print_string "#<builtin>"
+let rec pprint exp =
+  match exp with
+    | Int i -> Format.print_int i
+    | Float f -> Format.print_float f
+    | Char c -> Format.print_char c
+    | Bool b -> Format.print_bool b
+    | String s -> Format.print_string s
+    | List l -> pprint_list l
+    | Lambda _ | Closure _ -> Format.print_string "#<function>"
+    | _ -> Format.print_string "#<builtin>"
 and pprint_list l =
   Format.print_char '[';
   ignore (Utils.map pprint (intersperse (String ", ") l)) ;

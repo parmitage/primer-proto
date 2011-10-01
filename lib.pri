@@ -148,8 +148,8 @@ val qSort = fun xs ->
    in loop(xs, fun x -> x) ;
 
 val sortBy = fun xs f ->
-   let lt = fun a -> f(a) < f(Head(xs)) in
-   let gte = fun a -> f(a) >= f(Head(xs)) in
+   let lt = fun a -> f(a) < f(head(xs)) in
+   let gte = fun a -> f(a) >= f(head(xs)) in
    if head(xs) != []
    then sortBy(filter(lt, tail(xs)), f) ++ [head(xs)] ++ sortBy(filter(gte, tail(xs)), f)
    else [] ;
