@@ -5,7 +5,7 @@ val geneCount = 12;
 val population = 16;
 
 ### The number of generations to run the algorithm for
-val generations = 200;
+val generations = 100;
 
 ### The weight limit of the knapsack
 val weightLimit = 6.9;

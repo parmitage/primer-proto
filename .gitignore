@@ -1,7 +1,10 @@
 pri
 prc
-*.cm[io]
+*.cm[iox]
 *.mli
+*.o
+parser.ml
+lexer.ml
 *~
 *.DS_Store
 *._d

@@ -28,8 +28,13 @@ release:
 	ocamllex lexer.mll
 	ocamlopt -c lexer.ml
 	ocamlopt -c eval.ml
+	ocamlopt -c read.ml
+	ocamlopt -c javascript16.ml
+	ocamlopt -c compiler.ml
 	ocamlopt -o pri str.cmxa utils.ml type.ml symtbl.ml environment.ml \
 		parser.ml lexer.ml eval.ml read.ml
+	ocamlopt -o prc str.cmxa utils.ml type.ml symtbl.ml environment.ml \
+		parser.ml lexer.ml javascript16.ml compiler.ml
 
 clean:
 	rm pri prc lexer.ml parser.ml parser.mli *.cmo *.cmi *.o *.cmx
