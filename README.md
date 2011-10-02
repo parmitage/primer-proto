@@ -1,32 +1,36 @@
 Primer
 ======
-Primer is a simple programming language which I wrote for my own amusement. While it's nothing more than my hobby language, a couple of people have found it worth playing with either to learn functional programming or to study a simple language implementation.
+Primer is my hobby programming language. In bullet points it is:
 
-Primer is dynamically typed, immutable, uses strict evaluation and has higher order functions and closures. It's open source software and distributed under the MIT license. Primer builds on Linux, Mac and Windows.
+- dynamically typed
+- immutable
+- strict evaluation
+- higher order functions and closures
+- batch interpreter, REPL and compiler
+- builds on Linux, Mac and Windows
+- MIT licensed
 
 If you have any questions about Primer then please feel free to [email](mailto:philip.armitage@gmail.com) me.
 
 Download and install
 --------------------
-The latest version of Primer can always be found on [GitHub](http://github.com/parmitage/primer). I will also aim to make binaries available for Linux, MacOS and Windows whenever I think a version is stable enough to play with. The latest of these will be available from the download tab on the above page.
+The latest version of Primer can be pulled from [GitHub](http://github.com/parmitage/primer).
 
-Inside the tarball you'll find the following folders:
+Inside the tarball you'll find the following:
 
-src/       - the OCaml source code for Primer
-emacs/     - an Emacs major mode for Primer
-examples/  - some example Primer programs
-README.md  - this file
-LICENSE    - the MIT license
+- src/       - the OCaml source code for Primer
+- lib/       - the Primer standard library
+- emacs/     - an Emacs major mode for Primer
+- examples/  - some example Primer programs
+- tests/     - some test scripts
+- README.md  - this file
+- LICENSE    - the MIT license
 
-To install a binary release of Primer, unpack the tarball into a directory on your system and set the environment variable `PRIMER_LIBRARY_PATH` to point to this directory. If you're using bash then this should do it:
-
-    export PRIMER_LIBRARY_PATH=/path/to/primer/
-
-On a Windows system, environment variables are set through the control panel.
+To install: unpack the tarball, build using make and set the environment variable `PRIMER_LIBRARY_PATH` to point to the `lib` directory.
 
 Hello, World!
 -------------
-As with most modern languages, Hello World is just a literal string so isn't very interesting to show. The usual equivalent in a functional language is `fac` or `fib` which often rubs people up the wrong way so I'll instead follow the Haskell guys lead and use Quicksort as my Hello World:
+The canonical first program is just a literal string in Primer. Rather than resorting to the usual `fac` or `fib`, I'll instead follow Haskell's lead and use Quicksort:
 
     val sort = fun xs ->
        let lt = fun a -> a < head(xs)
@@ -36,31 +40,31 @@ As with most modern languages, Hello World is just a literal string so isn't ver
                              ++ sort(filter(gte, tail(xs)))
           else [] ;
 
-Note that this version of Quicksort is nice for showing off how the language looks but is not tail-recursive so would blow the stack on longer lists. The standard library has a tail recursive version of Quicksort implemented using CPS but it's not as easy to follow.
+Note that this version of Quicksort is easy to read but isn't tail-recursive. The Primer standard library has a version implemented using CPS.
 
 Quick start
 -----------
-Primer has a batch interpreter, a REPL and a compiler which currently targets JavaScript. The quickest way to play with the language is in the REPL which you start with:
+The quickest way to get started is at the REPL:
 
     ./pri
 
-Alternatively, to load an existing Primer source file, simply pass it as a command line argument:
+Alternatively, to load an existing Primer source file, simply pass it as an argument:
 
     ./pri MyFile.pri
 
-To compile a source file:
+To compile to JavaScript:
 
     ./prc MyFile.pri MyFile.js
 
-Alternatively you can generate a webpage to host the JavaScript:
+To compile to JavaScript embedded in a HTML file:
 
     ./prc MyFile.pri MyFile.html
 
-Please note that the compiler is a work in progres.
+Not all language features supported by the interpreter are currently implemented in the compiler.
 
 Language reference
 ------------------
-Bindings are immutable.
+Bindings are introduced with __val__ and are immutable.
 
     val pi = 3.14159;
 
@@ -73,13 +77,13 @@ Functions are first class objects, can be passed anonymously and are higher orde
     val simpleOpSquared = fn (f, x) f(x) * f(x);
     simpleOpSquared(fn (x) x / 3, 12)       # 16
 
-Primer supports closures.
+Primer supports closures (which are also immutable).
 
     val makeAdder = fn (y) fn (a) y + a;
     val add2 = MakeAdder(2);
     add2(2);                                # 4
 
-__let__ introduces local definitions.
+The __let__ keyword introduces local definitions.
 
     let x = 12 in x + 4;
 
@@ -89,10 +93,10 @@ Lists can be nested and are heterogeneous.
 
 Several functions provide access to list elements.
  
-    Head(xs);
-    Tail(xs);
-    Last(xs1);
-    Length(xs);
+    head(xs);
+    tail(xs);
+    last(xs1);
+    length(xs);
 
 A list can by accessed by index with the __at__ operator.
 
@@ -108,7 +112,7 @@ To concatenate two lists use the __append__ operator.
 
 Strings are just lists of characters.
 
-    Head("hello");
+    head("hello");
     "hello" ! 3;
 
 The type of a value can be tested with the __is__ operator.
@@ -121,19 +125,19 @@ The __as__ operator converts between types.
     123.45 as string;                       # "123.45"
     "123.45" as float;                      # 123.45
 
-The __if__ statement is an expression so the __else__ branch is mandatory.
+The __if__ statement is an expression (so the __else__ branch is mandatory).
 
     val count = fn (xs)
        if xs != []
-       then 1 + count(Tail(xs))
+       then 1 + count(tail(xs))
        else 0;
 
-Tail-recursive functions are optimised as in this accumulator version of Count.
+Tail-recursive functions are optimised as in this accumulator version of count.
 
     val count = fn (xs)
        let counter = fn (a, xs)
           if xs != []
-          then counter(a + 1, Tail(xs))
+          then counter(a + 1, tail(xs))
           else a
        in counter(0, xs);
 
@@ -174,6 +178,10 @@ __drop__ the first n elements from a list.
 
     drop(1, [1,2,3,4,5,6]);                 # [2,3,4,5,6]
 
+__last__ returns the last element of a list.
+
+    last([1,2,3,4]);                       # 4
+
 __takeWhile__ returns items from a list until a predicate returns false.
 
     takeWhile(even, [2,4,6,1,3,5]);         # [2,4,6]
@@ -181,6 +189,10 @@ __takeWhile__ returns items from a list until a predicate returns false.
 __dropWhile__ drops items from a list until a predicate returns false.
 
     dropWhile(odd, [1,3,5,2,4,6]);          # [2,4,6]
+
+__empty__ returns true if a list is empty.
+
+    empty([1,2,3]);                         # false
 
 __any__ returns true if any item in a list satisfies a predicate.
 
@@ -190,13 +202,21 @@ __all__ returns true if all items in a list satisfy a predicate.
 
     all(odd, [1,2,3,4,5,6]);                # false
 
-__min__ returns the smallest item in a list of orderable items.
+__min__ returns the smallest item in a list of order-able items.
 
     min([7,2,4,5,3,8,6]);                   # 2
 
-__max__ returns the largest item in a list of orderable items.
+__max__ returns the largest item in a list of order-able items.
 
     max([7,2,4,5,3,8,6]);                   # 8
+
+__odd__ returns true if its argument is odd.
+
+    odd(2);                                 # false
+    
+__even__ returns true if its argument is even.
+
+    even(2);                                # true
 
 __sum__ returns the sum of items in a numeric list.
 
@@ -206,9 +226,21 @@ __product__ returns the product of items in a numeric list.
 
     product([1,2,3,4,5]);                   # 120
 
-__sort__ an orderable list of items.
+__sort__ an order-able list of items.
 
     sort([4,2,8,1]);                        # [1,2,4,8]
+
+__qsort__ is a tail recursive version of sort.
+
+    qsort([4,2,8,1]);                       # [1,2,4,8]
+
+__sortBy__ sorts a list by a applying a function to its elements.
+
+    sortBy(dict, key);                      # [['A',1], ['B',2]]
+
+__qsortBy__ tail recursive version of sortBy.
+
+    qsortBy(dict, key);                     # [['A',1], ['B',2]]
 
 __find__ an element in a list.
 
@@ -230,31 +262,43 @@ __group__ a list into a list of lists of equal adjacent elements.
 
     group([1,1,2,3,4,4,5,6,6,6]);           # [[1,1],[2],[3],[4,4],[5],[6,6,6]]
 
-__mapPair__
+__mapPair__ apply a function to a list two elements at a time.
 
-__collect__
+    mapPair(fun x y -> x + y, [1,2,3,4]);   # [3, 7]
 
+__collect__ invoke a function a number of times collecting the results.
+
+    collect(randomInt, 4);                  # [473, 111829, 455, 9]
+
+__bitSet__ tests if a single bit is set in a byte.
+
+    bitSet(byte, 3);                        # true
 
 Example programs
 ----------------
-The tarball includes a few sample programs to highlight the features of the language. These include...
+The `examples` directory contains a few simple programs to show the features of Primer:
+
+- dictionary.pri         - an inefficient dictionary
+- euler.pri              - Project Euler problems
+- factorial.pri          - factorial function
+- fizzbuzz.pri           - fizzbuzz party game
+- knapsack.pri           - genetic algorithm solution to the knapsack problem
+- object.pri             - port of Oleg Kiselyov's "Purely-functional OO system"
+- rover.pri              - the Mars Rover problem
+- search.pri             - binary search
 
 Editing
 -------
-You can of course edit Primer code in any text editor but you will find the beginnings of an Emacs major mode in the source distribution.
+Emacs users will find the beginnings of a major mode in the `emacs` directory of the source distribution.
 
-History
--------
-The initial version of Primer was written in C, mainly because I was familiar with Lex and Yacc. This was a very poor reason for choosing an implementation language and I later decided to rewrite the interpreter in something nicer. My choices were between Scheme and an ML family language. I decided to go with ML because at the time Scheme was going through some standardisation pains and it wasn't clear what implementations were going to do. Specifically, I chose OCaml because it seemed to be the most practical dialect of ML.
+To-do
+-----
+1. Add the match statement from the original C implementation.
 
-Future
-------
-As Primer is my hobby project, I suspect it will never be truly finished because I want to keep fiddling with it. My current todo list is below although I should stress that I may decide not to do some of these things and I may tackle them in a different order.
+2. Add proper library loading from the original C implementation.
 
-1. Add the match statement from the original C implementation of Primer.
+3. Add the let* block from the original C implementation.
 
-2. Add proper library loading from the original C implementation of Primer.
+4. Complete the JavaScript compiler (still to implement is library loading, a full prelude and TCO).
 
-3. Complete the JavaScript compiler. Still to implement is library loading, a full prelude and TCO.
-
-4. A compiler to C. Native code compilation would be nice and C can act as a portable assembler. Another option could be to target LLVM.
+5. A native code compiler (there are a couple of sensible options: either treating C as a portable assembly language or compiling to LLVM).
