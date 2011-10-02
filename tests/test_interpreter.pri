@@ -3,6 +3,8 @@
 # This is the Primer test suite. The first section comprises data and
 # functions for the test cases which follow.
 #
+# These tests are very out of date and will not currently parse!
+#
 ##############################################################################
 
 a: 10

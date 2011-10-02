@@ -1,6 +1,4 @@
 (* TODO base library *)
-(* TODO output to JS lacks prelude *)
-(* TODO what extension to use for LLVM *)
 (* TODO C backend *)
 (* TODO LLVM backend *)
 
@@ -30,7 +28,7 @@ let detect_target filename =
       | "js"   -> JS
       | "html" -> HTML
       | "c"    -> C
-      | "llvm" -> LLVM
+      | "o"    -> LLVM
       | _      -> raise Target_unknown
 
 let check_args () =
@@ -41,24 +39,27 @@ let check_args () =
     | _ -> false
   
 let rec compile_to_javascript chan =
-  try
-    let exp = Parser.main Lexer.token lexbuf in
-    let result = Javascript16.eval exp "" in
-    fprintf chan "%s\n" result;
-    ignore (compile_to_javascript chan)
-  with
-    | Type_mismatch -> error "type mismatch"
-    | Parsing.Parse_error -> error "parse error"
-    | Lexer.Eof -> ()
+  let rec generate_javascript chan =
+    try
+      let exp = Parser.main Lexer.token lexbuf in
+      let result = Javascript16.eval exp "" in
+      fprintf chan "%s\n" result;
+      ignore (generate_javascript chan)
+    with
+      | Type_mismatch -> error "type mismatch"
+      | Parsing.Parse_error -> error "parse error"
+      | Lexer.Eof -> ()
+  in
+  fprintf chan "%s\n" (Javascript16.prelude ());
+  generate_javascript chan  
 
 let compile_to_html chan =
   let title = Printf.sprintf "Output of %s" infile in
-  let header1 = Printf.sprintf "<html><head><title>%s</title>" title in
-  let header2 = "<script language=javascript>" in
-  let header3 = "</script></head>" in
-  let body = "<body></body></html>" in
+  let header1 = Printf.sprintf "<html><head><title>%s</title>" title
+  and header2 = "<script language=javascript>"
+  and header3 = "</script></head>"
+  and body = "<body></body></html>" in
   fprintf chan "%s\n" (header1 ^ header2);
-  fprintf chan "%s\n" (Javascript16.prelude ());
   compile_to_javascript chan;
   fprintf chan "%s\n" (header3 ^ body)
       
@@ -67,8 +68,8 @@ let rec compile () =
   with
     | true ->
       let outfile_name = outfile in
-      let backend = detect_target outfile_name in
-      let outfile_channel = open_out outfile_name in
+      let backend = detect_target outfile_name
+      and outfile_channel = open_out outfile_name in
       ignore begin match backend
         with 
           | JS   -> compile_to_javascript outfile_channel
@@ -78,7 +79,7 @@ let rec compile () =
       end;
       close_out outfile_channel
     | false ->
-      Format.print_string "usage: prc in.pri out.{js|html|c}\n";
+      Format.print_string "usage: prc in.pri out.{js|html|c|o}\n";
       exit 0
 
 let _ = compile () ;;

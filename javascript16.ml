@@ -2,7 +2,6 @@
 
 (* TODO tail recursion elimination *)
 (* TODO as (Cast) and is (Is) operators *)
-(* TODO install range function *)
 (* TODO match statement *)
 
 open Type
@@ -135,4 +134,14 @@ and cons lhs rhs =
   "cons(" ^ eval1 lhs ^ "," ^ eval1 rhs ^ ")"
 
 let prelude () =
-  "var cons = function (x, l) { var l2 = l.slice(0); l2.unshift(x); return l2; };"
+  "var cons = function (x, l) " ^
+    "{ var l2 = l.slice(0);" ^
+    "l2.unshift(x);" ^
+    "return l2;" ^
+    "};" ^
+
+    "var range = function (start, end)" ^
+    "{ var array = [];" ^
+    "for (var i = start; i <= end; i += 1)" ^
+    "{ array.push(i); }" ^
+    "return array; };";
