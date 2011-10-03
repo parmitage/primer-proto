@@ -15,7 +15,7 @@ type target = JS | HTML | C | LLVM
 let infile = if Array.length Sys.argv > 1 then Sys.argv .(1) else ""
 let outfile = if Array.length Sys.argv > 2 then Sys.argv .(2) else ""
 
-let lexbuf =
+let lexbuf infile =
   try
     Lexing.from_channel (open_in infile)
   with
@@ -38,20 +38,21 @@ let check_args () =
     | 3 -> Sys.file_exists infile
     | _ -> false
   
-let rec compile_to_javascript chan =
-  let rec generate_javascript chan =
+let rec compile_to_javascript chan infile =
+  let rec generate_javascript lexbuf =
     try
       let exp = Parser.main Lexer.token lexbuf in
       let result = Javascript16.eval exp "" in
       fprintf chan "%s\n" result;
-      ignore (generate_javascript chan)
+      ignore (generate_javascript lexbuf)
     with
       | Type_mismatch -> error "type mismatch"
       | Parsing.Parse_error -> error "parse error"
       | Lexer.Eof -> ()
   in
   fprintf chan "%s\n" (Javascript16.prelude ());
-  generate_javascript chan  
+  generate_javascript (lexbuf Utils.base_library);
+  generate_javascript (lexbuf infile)
 
 let compile_to_html chan =
   let title = Printf.sprintf "Output of %s" infile in
@@ -60,7 +61,7 @@ let compile_to_html chan =
   and header3 = "</script></head>"
   and body = "<body></body></html>" in
   fprintf chan "%s\n" (header1 ^ header2);
-  compile_to_javascript chan;
+  compile_to_javascript chan infile;
   fprintf chan "%s\n" (header3 ^ body)
       
 let rec compile () =
@@ -72,7 +73,7 @@ let rec compile () =
       and outfile_channel = open_out outfile_name in
       ignore begin match backend
         with 
-          | JS   -> compile_to_javascript outfile_channel
+          | JS   -> compile_to_javascript outfile_channel infile
           | HTML -> compile_to_html outfile_channel
           | C    -> raise Target_not_implemented
           | LLVM -> raise Target_not_implemented

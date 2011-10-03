@@ -1,5 +1,6 @@
 (* -- compiler backend for JavaScript 1.6 -- *)
 
+(* TODO move the prelude into a primer.js file inside lib? *)
 (* TODO tail recursion elimination *)
 (* TODO as (Cast) and is (Is) operators *)
 (* TODO match statement *)
@@ -32,17 +33,13 @@ let binop_sym op =
     | Mul  -> "*"
     | Div  -> "/"
     | Mod  -> "%"
-    | Eq   -> "==="
-    | Ne   -> "!=="
     | Lt   -> "<"
     | Gt   -> ">"
     | Gte  -> ">="
     | Lte  -> "<="
     | And  -> "&&"
     | Or   -> "||"
-    | App  -> "++"
-    | Rge  -> ".."
-    | Cons -> "::"
+    | _    -> raise Type_mismatch
 
 let bitop_sym op =
   match op with
@@ -66,7 +63,7 @@ let rec eval exp str =
     | UniOp(o, arg)       -> str ^ uniop o arg
     | BinOp(o, lhs, rhs)  -> str ^ binop lhs o rhs
     | BitOp(o, lhs, rhs)  -> str ^ bitop lhs o rhs
-    | Head xs             -> str ^ index xs (Int 0)
+    | Head xs             -> str ^ head xs
     | Tail xs             -> str ^ tail xs
     | Length xs           -> str ^ length xs
     | At(l, x)            -> str ^ index l x
@@ -94,12 +91,24 @@ and uniop op exp =
 
 and binop lhs op rhs =
   match op with
+    | Eq   -> eq lhs rhs
+    | Ne   -> neq lhs rhs
     | Rge  -> range lhs rhs
     | Cons -> cons lhs rhs
+    | App  -> concat lhs rhs
     | _    -> eval1 lhs ^ (binop_sym op) ^ eval1 rhs
 
 and bitop lhs op rhs =
   eval1 lhs ^ (bitop_sym op) ^ eval1 rhs
+
+and eq lhs rhs =
+  "equals(" ^ eval1 lhs ^ "," ^ eval1 rhs ^ ")"
+
+and neq lhs rhs =
+  "!equals(" ^ eval1 lhs ^ "," ^ eval1 rhs ^ ")"
+
+and head l =
+  "head(" ^ eval1 l ^ ")"
 
 and tail l =
   eval1 l ^ ".slice(1)"
@@ -118,7 +127,7 @@ and list l =
   "[" ^ String.concat "," (Utils.map eval1 l) ^ "]"
 
 and show x =
-  "document.write(" ^ eval1 x ^ " + \"<br/>\");"
+  "document.write(" ^ eval1 x ^ " + \"<br/>\")"
 
 and rnd x =
   "Math.floor(Math.random() * (" ^
@@ -133,15 +142,59 @@ and range lhs rhs =
 and cons lhs rhs =
   "cons(" ^ eval1 lhs ^ "," ^ eval1 rhs ^ ")"
 
-let prelude () =
-  "var cons = function (x, l) " ^
-    "{ var l2 = l.slice(0);" ^
-    "l2.unshift(x);" ^
-    "return l2;" ^
-    "};" ^
+and concat lhs rhs =
+  eval1 lhs ^ ".concat(" ^ eval1 rhs ^ ")"
 
-    "var range = function (start, end)" ^
-    "{ var array = [];" ^
-    "for (var i = start; i <= end; i += 1)" ^
-    "{ array.push(i); }" ^
-    "return array; };";
+let prelude () =
+  "var equals = function (a, b)
+   {
+     if (typeof(a) != typeof(b))
+        return false;
+
+     if (typeof(a) != 'object')
+        return a === b;
+
+     if(!a || !b)
+       return false;
+
+     if(a.length == b.length)
+     {
+        for(var i = 0; i < a.length;i++)
+        {
+           if(typeof a[i] == 'object') {
+              if(!equals(a[i], b[i]))
+                 return false;
+           }
+           else if(a[i] != b[i])
+              return false;
+        }
+    
+        return true;
+     }
+     else
+       return false;
+    };
+
+    var head = function (xs) {
+       if (xs.length == 0)
+          return [];
+
+       return xs[0];
+    };
+
+    var cons = function (x, l)
+    {
+       var l2 = l.slice(0);
+       l2.unshift(x);
+       return l2;
+    };
+
+    var range = function (start, end)
+    {
+       var array = [];
+       for (var i = start; i <= end; i += 1) {
+          array.push(i);
+       }
+    
+       return array;
+    };";
