@@ -266,7 +266,7 @@ __mapPair__ apply a function to a list two elements at a time.
 
     mapPair(fun x y -> x + y, [1,2,3,4]);   # [3, 7]
 
-__collect__ invoke a function a number of times collecting the results.
+__collect__ invoke a function a number of times, collecting the results.
 
     collect(randomInt, 4);                  # [473, 111829, 455, 9]
 
@@ -276,7 +276,7 @@ __bitSet__ tests if a single bit is set in a byte.
 
 Example programs
 ----------------
-The `examples` directory contains a few simple programs to show the features of Primer:
+The `examples` directory contains a few simple programs:
 
 - dictionary.pri         - an inefficient dictionary
 - euler.pri              - Project Euler problems
@@ -299,6 +299,6 @@ To-do
 
 3. Add the let* block from the original C implementation.
 
-4. Complete the JavaScript compiler (still to implement is library loading, a full prelude and TCO).
+4. Complete the JavaScript compiler.
 
-5. A native code compiler (there are a couple of sensible options: either treating C as a portable assembly language or compiling to LLVM).
+5. A native code compiler (either via C or LLVM).

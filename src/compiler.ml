@@ -1,4 +1,4 @@
-(* TODO base library *)
+(* TODO full set of tests for JS compiler *)
 (* TODO C backend *)
 (* TODO LLVM backend *)
 

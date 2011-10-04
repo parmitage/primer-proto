@@ -37,14 +37,14 @@ val print = fun r ->
    let x = roverX(r) in
    let y = roverY(r) in
    let d = (['W', 'S', 'E', 'N'] at roverH(r)) in
-   [x, y, d];
+   show([x, y, d]);
 
 val navigate = fun r s -> foldl(move, r, s);
 
 val move = fun r c ->
    if c == 'L' or c == 'R'
    then rotate(r, c)
-   else translate(r, c as int - '0' as int);
+   else translate(r, c as string as int);
 
 val translate = fun r c ->
    if even(roverH(r))

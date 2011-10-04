@@ -130,6 +130,7 @@ let cast f t = match f, t with
   | Char c, Type TInt -> Int(int_of_char c)
   | Char c, Type TFloat -> Float(float_of_int (int_of_char c))
   | Char c, Type TString -> String(String.make 1 c)
+  | String s, Type TInt -> Int(int_of_string s)
   | _ -> raise Invalid_cast
 
 let is lhs typ = match lhs, typ with

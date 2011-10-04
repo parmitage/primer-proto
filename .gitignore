@@ -3,6 +3,7 @@ prc
 *.cm[iox]
 *.mli
 *.o
+*.exe
 parser.ml
 lexer.ml
 *~
