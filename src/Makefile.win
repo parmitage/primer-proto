@@ -1,4 +1,3 @@
-BIN    = primer.exe
 LFLAGS = -cclib "-L C:\cygwin\lib\mingw -L C:\cygwin\lib\w32api"
 
 debug:
@@ -12,7 +11,13 @@ debug:
 	ocamllex lexer.mll
 	ocamlc -c lexer.ml
 	ocamlc -c eval.ml
-	ocamlc -o $(BIN) utils.cmo type.cmo symtbl.cmo environment.cmo parser.cmo lexer.cmo eval.cmo
+	ocamlc -c read.ml
+	ocamlc -c javascript16.ml
+	ocamlc -c compiler.ml
+	ocamlc -o pri.exe str.cma utils.cmo type.cmo symtbl.cmo environment.cmo \
+		parser.cmo lexer.cmo eval.cmo read.cmo
+	ocamlc -o prc.exe str.cma utils.cmo type.cmo symtbl.cmo environment.cmo \
+		parser.cmo lexer.cmo javascript16.cmo compiler.cmo
 
 release:
 	ocamlopt -c utils.ml
@@ -21,11 +26,21 @@ release:
 	ocamlopt -c environment.ml
 	ocamlyacc parser.mly
 	ocamlopt -c parser.mli
+	ocamlopt -c parser.ml
 	ocamllex lexer.mll
-	ocamlopt $(LFLAGS) -o $(BIN) utils.ml type.ml symtbl.ml environment.ml parser.ml lexer.ml eval.ml
+	ocamlopt -c lexer.ml
+	ocamlopt -c eval.ml
+	ocamlopt -c read.ml
+	ocamlopt -c javascript16.ml
+	ocamlopt -c compiler.ml
+	ocamlopt $(LFLAGS) -o pri.exe str.cmxa utils.ml type.ml symtbl.ml \
+                 environment.ml parser.ml lexer.ml eval.ml read.ml
+	ocamlopt $(LFLAGS) -o prc.exe str.cmxa utils.ml type.ml symtbl.ml \
+                 environment.ml parser.ml lexer.ml javascript16.ml compiler.ml
 
 clean:
-	del primer.exe
+	del pri.exe
+	del prc.exe
 	del lexer.ml
 	del parser.ml
 	del parser.mli
