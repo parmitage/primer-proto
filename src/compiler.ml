@@ -50,7 +50,7 @@ let rec compile_to_javascript chan infile =
       | Parsing.Parse_error -> error "parse error"
       | Lexer.Eof -> ()
   in
-  fprintf chan "%s\n" (Javascript16.prelude ());
+  fprintf chan "%s\n" Javascript16.prelude;
   generate_javascript (lexbuf Utils.base_library);
   generate_javascript (lexbuf infile)
 

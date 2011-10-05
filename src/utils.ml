@@ -41,13 +41,13 @@ let error msg = Format.printf "@[error: %s@]@." msg
 
 let (%) = Printf.sprintf
 
-let missing_base_lib =
+let missing_base_library =
   "Unable to load base library. Ensure PRIMER_LIBRARY_PATH is set."
 
-let base_library =
-  let lib_dir =
-    try
-      Sys.getenv "PRIMER_LIBRARY_PATH"
-    with
-      | Sys_error _ -> error missing_base_lib; exit 0
-  in Filename.concat lib_dir "lib.pri"
+let base_library_directory =
+  try
+    Sys.getenv "PRIMER_LIBRARY_PATH"
+  with
+    | Sys_error _ -> error missing_base_library; exit 0
+
+let base_library = Filename.concat base_library_directory "lib.pri"
