@@ -41,6 +41,15 @@ let error msg = Format.printf "@[error: %s@]@." msg
 
 let (%) = Printf.sprintf
 
+let read_file_as_string path =
+  (* use open_in_bin to avoid line ending issues on Windows *)
+  let chan = open_in_bin path in
+  let len = in_channel_length chan in
+  let str = String.create len in
+  really_input chan str 0 len;
+  close_in chan;
+  (str)
+
 let missing_base_library =
   "Unable to load base library. Ensure PRIMER_LIBRARY_PATH is set."
 

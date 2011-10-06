@@ -1,10 +1,5 @@
 (* -- compiler backend for JavaScript 1.6 -- *)
 
-(* TODO do all math ops need char conversion or should the language require it? *)
-(* TODO move the prelude into a primer.js file inside lib? *)
-(* TODO tail recursion elimination *)
-(* TODO match statement *)
-
 open Type
 open Utils
 
@@ -58,6 +53,8 @@ let bitop_sym op =
     | LShift -> "<<"
     | RShift -> ">>"
 
+(* TODO this makes no explicit attempt to eliminate tail calls yet all tested
+   JS engines seem to handle deeply recursive calls without blowing stack? *)
 let rec eval exp str = 
   match exp with
     | Int _ | Float _
@@ -142,7 +139,7 @@ and apply sym args =
 and list l =
   "[" ^ String.concat "," (Utils.map eval1 l) ^ "]"
 
-(* TODO show should return its argument *)
+(* TODO show should return its argument - does document.write ? *)
 and show x =
   "document.write(" ^ eval1 x ^ " + \"<br/>\")"
 
@@ -192,13 +189,8 @@ and cast exp typ =
         | _,        _        -> raise Invalid_cast
       end
     | _        -> raise Invalid_cast
-    
+
 let prelude =
-  let path =
-    Filename.concat Utils.base_library_directory "primer.js" in
-  let chan = open_in path in
-  let len = in_channel_length chan in
-  let str = String.create len in
-  really_input chan str 0 len;
-  close_in chan;
-  (str)
+  let path = Filename.concat
+    Utils.base_library_directory "primer.js"
+  in Utils.read_file_as_string path
