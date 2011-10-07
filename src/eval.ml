@@ -16,6 +16,20 @@ and pprint_list l =
   ignore (Utils.map pprint (intersperse (String ", ") l)) ;
   Format.print_char ']'
 
+let head exp = match exp with
+  | List(x::xs) -> x
+  | List([])    -> List []
+  | String ""   -> List []
+  | String s    -> Char(String.get s 0)
+  | _           -> raise Type_mismatch
+    
+let tail exp = match exp with
+  | List(x::xs) -> List(xs)
+  | List([])    -> List []
+  | String ""   -> List []
+  | String s    -> String(String.sub s 1 ((String.length s) - 1))
+  | _           -> raise Type_mismatch
+
 let unary_op oper arg =  match oper, arg with
   | Not, Bool x -> Bool(not x)
   | Neg, Int x -> Int(-x)
@@ -23,20 +37,32 @@ let unary_op oper arg =  match oper, arg with
   | Bnot, Int x -> Int(lnot x)
   | _ -> raise Type_mismatch
 
-let rec eq lhs rhs = match lhs, rhs with 
-  | Int x, Int y -> x == y
-  | Float x, Float y -> x == y
-  | Int x, Float y -> float_of_int x == y
-  | Float x, Int y -> x == float_of_int y
-  | Char x, Char y -> x = y
-  | Bool x, Bool y -> x == y
-  | List xs1, List xs2 -> list_eq xs1 xs2
-  | String s1, String s2 -> s1 = s2
-  | _, _ -> false
-and list_eq xs ys = match xs, ys with
-  | x::xs, y::ys -> eq x y && list_eq xs ys
-  | [], [] -> true
-  | _, _ -> false
+let rec list_of_string str =
+  let rec inner str =
+    match str with
+      | "" -> []
+      | s  -> Char(String.get s 0) ::
+        inner (String.sub s 1 ((String.length s) - 1))
+  in List (inner str)
+
+let rec eq lhs rhs =
+  match lhs, rhs with 
+    | Int x,     Int y     -> x == y
+    | Float x,   Float y   -> (compare x y) == 0
+    | Int x,     Float y   -> float_of_int x == y
+    | Float x,   Int y     -> x == float_of_int y
+    | Char x,    Char y    -> x = y
+    | Bool x,    Bool y    -> x == y
+    | List xs1,  List xs2  -> list_eq xs1 xs2
+    | String s1, String s2 -> s1 = s2
+    | List s1,   String s2 -> eq lhs (list_of_string s2)
+    | String s1, List s2   -> eq (list_of_string s1) rhs
+    | _,         _         -> false
+and list_eq xs ys =
+  match xs, ys with
+    | x::xs, y::ys -> eq x y && list_eq xs ys
+    | [],    []    -> true
+    | _,     _     -> false
 
 let rec binary_op oper lhs rhs = match oper, lhs, rhs with
   | Add, Int x, Int y -> Int(x + y)
@@ -84,63 +110,52 @@ let rec binary_op oper lhs rhs = match oper, lhs, rhs with
   | _ -> print_string "error in binary_op"; raise Type_mismatch
 
 let bitwise_op oper lhs rhs =  match oper, lhs, rhs with
-  | Band, Int x, Int y -> Int(x land y)
-  | Bor, Int x, Int y -> Int(x lor y)
-  | Xor, Int x, Int y -> Int(x lxor y)
+  | Band, Int x, Int y   -> Int(x land y)
+  | Bor, Int x, Int y    -> Int(x lor y)
+  | Xor, Int x, Int y    -> Int(x lxor y)
   | LShift, Int x, Int y -> Int(x lsl y)
   | RShift, Int x, Int y -> Int(x lsr y)
-  | _ -> raise Type_mismatch
-
-let head exp = match exp with
-  | List(x::xs) -> x
-  | List([]) -> List []
-  | String "" -> List []
-  | String s -> Char(String.get s 0)
-  | _ -> raise Type_mismatch
-    
-let tail exp = match exp with
-  | List(x::xs) -> List(xs)
-  | List([]) -> List []
-  | String "" -> List []
-  | String s -> String(String.sub s 1 ((String.length s) - 1))
-  | _ -> raise Type_mismatch
+  | _                    -> raise Type_mismatch
 
 let length exp = match exp with
-  | List xs -> Int(List.length xs)
+  | List xs  -> Int(List.length xs)
   | String s -> Int(String.length s)
-  | _ -> raise Type_mismatch
+  | _        -> raise Type_mismatch
 
 let at lst idx = match lst, idx with
   | List l, Int i -> List.nth l i
-  | _ -> raise Type_mismatch
+  | _             -> raise Type_mismatch
 
 let random exp = match exp with
   | Int i -> Int(Random.int i)
-  | _ -> raise Type_mismatch
+  | _     -> raise Type_mismatch
 
 let cast f t = match f, t with
-  | Int i, Type TFloat -> Float(float_of_int i)
-  | Int i, Type TString -> String(string_of_int i)
-  | Int i, Type TBool -> Bool(if i <= 0 then false else true)
-  | Float f, Type TInt -> Int(int_of_float f)
-  | Float f, Type TString -> String(string_of_float f)
-  | Bool b, Type TInt -> Int(if b then 1 else 0)
-  | Bool b, Type TFloat -> Float(if b then 1.0 else 0.0)
-  | Bool b, Type TString -> String(if b then "true" else "false")
-  | Char c, Type TInt -> Int(int_of_char c)
-  | Char c, Type TFloat -> Float(float_of_int (int_of_char c))
-  | Char c, Type TString -> String(String.make 1 c)
-  | String s, Type TInt -> Int(int_of_string s)
-  | _ -> raise Invalid_cast
+  | Int i,    Type TFloat  -> Float(float_of_int i)
+  | Int i,    Type TString -> String(string_of_int i)
+  | Int i,    Type TBool   -> Bool(if i <= 0 then false else true)
+  | Float f,  Type TInt    -> Int(int_of_float f)
+  | Float f,  Type TString -> String(string_of_float f)
+  | Bool b,   Type TInt    -> Int(if b then 1 else 0)
+  | Bool b,   Type TFloat  -> Float(if b then 1.0 else 0.0)
+  | Bool b,   Type TString -> String(if b then "true" else "false")
+  | Char c,   Type TInt    -> Int(int_of_char c)
+  | Char c,   Type TFloat  -> Float(float_of_int (int_of_char c))
+  | Char c,   Type TString -> String(String.make 1 c)
+  | String s, Type TInt    -> Int(int_of_string s)
+  | String s, Type TFloat  -> Float(float_of_string s)
+  | String s, Type TChar   -> Char(String.get s 0)
+  | _                      -> raise Invalid_cast
 
 let is lhs typ = match lhs, typ with
-  | Int _, Type TInt
-  | Float _, Type TFloat
-  | Char _, Type TChar
-  | Bool _, Type TBool
-  | String _, Type TString
-  | List _, Type TList -> Bool(true)
-  | _, _ -> Bool(false)
+  | Int _,     Type TInt
+  | Float _,   Type TFloat
+  | Char _,    Type TChar
+  | Bool _,    Type TBool
+  | String _,  Type TString
+  | List _,    Type TList 
+  | Closure _, Type TLambda -> Bool(true)
+  | _,         _            -> Bool(false)
 
 let show exp = pprint exp; Format.print_newline(); exp
 
