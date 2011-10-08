@@ -41,3 +41,13 @@ clean:
 
 docs:
 	pandoc readme.md -o index.html -c doc.css
+
+examples:
+	./prc ../examples/dictionary.pri ../examples/dictionary.html
+	./prc ../examples/euler.pri ../examples/euler.html
+	./prc ../examples/factorial.pri ../examples/factorial.html
+	./prc ../examples/fizzbuzz.pri ../examples/fizzbuzz.html
+	./prc ../examples/knapsack.pri ../examples/knapsack.html
+	./prc ../examples/object.pri ../examples/object.html
+	./prc ../examples/rover.pri ../examples/rover.html
+	./prc ../examples/search.pri ../examples/search.html

@@ -1,8 +1,9 @@
 val empty = fun xs -> head(xs) == [] ;
 
 val assert = fun id act exp ->
-   if act != exp then show(id)
-   else true ;
+   if act == exp
+   then "  PASS: " ++ id
+   else "* FAIL: " ++ id;
 
 val map = fun f xs ->
    let inner = fun xs ac ->
@@ -96,9 +97,11 @@ val take = fun n xs ->
    in inner(0, xs, []) ;
 
 val takeWhile = fun f xs ->
-   if head(xs) != [] and f(head(xs))
-   then head(xs) :: takeWhile(f, tail(xs))
-   else [] ;
+   if head(xs) != []
+   then if f(head(xs))
+        then head(xs) :: takeWhile(f, tail(xs))
+        else takeWhile(f, tail(xs))
+   else [];
 
 val drop = fun n xs ->
    let inner = fun a xs ->
