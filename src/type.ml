@@ -2,6 +2,7 @@ exception Type_mismatch
 exception Symbol_unbound
 exception Symbol_redefined
 exception Invalid_cast
+exception Inexhaustive_pattern
 exception Internal_error
 
 type typename = TInt | TFloat | TChar | TBool | TList | TString | TLambda
@@ -37,3 +38,7 @@ type expression =
   | Def of expression * expression
   | Type of typename
   | Seq of expression list
+  | Match of expression list * pattern list
+  | Any
+and pattern =
+  | Pattern of expression list * expression

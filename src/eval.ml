@@ -97,6 +97,8 @@ let rec eq lhs rhs =
     | String s1, String s2 -> s1 = s2
     | List s1,   String s2 -> eq lhs (list_of_string s2)
     | String s1, List s2   -> eq (list_of_string s1) rhs
+    | Any,       _         -> true
+    | _,         Any       -> true
     | _,         _         -> false
 
 and list_eq xs ys =
@@ -232,6 +234,7 @@ let rec eval exp env =
     | Bool _
     | String _
     | Closure _
+    | Any
     | Type _             -> exp
     | Symbol s           -> eval (Environment.lookup exp env) env
     | List l             -> if is_primitive_list l then exp else List(evlis l env)
@@ -252,6 +255,7 @@ let rec eval exp env =
     | Rnd i              -> random (eval i env)
     | Cast(f, t)         -> cast (eval f env) (eval t env)
     | Seq exps           -> seq exps env
+    | Match(t, c)        -> matches t c env
       
 and apply f args env =
   match f with
@@ -272,6 +276,18 @@ and condition exp env =
         | _      -> raise Type_mismatch
       end
     | _ -> raise Type_mismatch
+
+(* TODO handle Inexhaustive_pattern *)
+(* TODO any value *)
+and matches t c env =
+  let test_results = evlis t env in
+  match c with
+    | Pattern(c, a) :: ps ->
+      let match_results = evlis c env in
+      if List.for_all2 (fun a b -> eq a b) test_results match_results
+      then eval a env
+      else matches t ps env
+    | _ -> raise Inexhaustive_pattern
 
 and seq exps env =
   match exps with

@@ -8,16 +8,16 @@
 %token <string> SYMBOL STRING
 %token PLUS MINUS TIMES DIV
 %token LPAREN RPAREN LSQUARE RSQUARE COMMA SEMICOLON
-%token PROG DEF DEFINED LAMBDA LET VAL IN IF THEN ELSE ELIF COND APPLY BEGIN END
-%token LT GT GE LE NE EQ NOT AND OR MOD APPEND TRUE FALSE END LIST
-%token HEAD TAIL SHOW RND TYPE IS AS LENGTH AT CONS WHERE RANGE
+%token DEF DEFINED LAMBDA LET VAL IN IF THEN ELSE APPLY MATCH WITH BEGIN END
+%token LT GT GE LE NE EQ NOT AND OR MOD APPEND TRUE FALSE ANY END LIST
+%token HEAD TAIL SHOW RND IS AS LENGTH AT CONS RANGE
 %token B_AND B_OR B_XOR B_NOT B_LSHIFT B_RSHIFT
 %token EOL
 
 %nonassoc ELSE
 %left IN
 %left LET DEF DEFINED LPAREN RPAREN NOT B_NOT
-%left AND OR APPEND
+%left AND OR APPEND MATCH WITH THEN
 %left LT GT GE LE EQ NE RANGE
 %left PLUS MINUS
 %left TIMES DIV MOD AT AS IS
@@ -41,6 +41,7 @@ expr:
   | CHAR                                                { Char $1 }
   | TRUE                                                { Bool true }
   | FALSE                                               { Bool false }
+  | ANY                                                 { Any }
   | STRING                                              { String $1 }
   | identifier                                          { $1 }
   | LET identifier DEF expr IN expr                     { Let($2, $4, $6) }
@@ -82,6 +83,7 @@ expr:
   | expr AS expr                                        { Cast($1, $3) }
   | MINUS expr %prec UMINUS                             { UniOp(Neg, $2) }
   | LSQUARE list RSQUARE                                { List $2 }
+  | MATCH list pattern_block                            { Match($2, $3) }
 ;
 
 identifier:
@@ -97,6 +99,15 @@ list:
   expr                                                  { [$1] }
   | expr COMMA list                                     { $1 :: $3 }
   | /* empty list */                                    { [] }
+;
+
+pattern_block:
+  pattern                                               { [$1] }
+  | pattern pattern_block                               { $1 :: $2 }
+;
+
+pattern:
+  WITH list THEN expr                                   { Pattern($2, $4) }
 ;
 
 seq:
