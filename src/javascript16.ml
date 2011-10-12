@@ -22,6 +22,7 @@ let emit exp =
     | Char c   -> "\"" ^ String.make 1 c ^ "\""
     | String s -> quote s
     | Symbol s -> Symtbl.lookup_sym s
+    | Any      -> "true"
     | _        -> raise Type_mismatch
 
 let uniop_sym op =
@@ -58,7 +59,7 @@ let bitop_sym op =
 let rec eval exp str = 
   match exp with
     | Int _ | Float _
-    | Char _ | Bool _
+    | Char _ | Bool _ | Any
     | String _ | Symbol _ -> str ^ emit exp
     | List l              -> str ^ list l
     | If(p, c, a)         -> str ^ condition p c a
@@ -77,6 +78,7 @@ let rec eval exp str =
     | Rnd x               -> str ^ rnd x
     | Is(exp, typ)        -> str ^ is exp typ
     | Cast(exp, typ)      -> str ^ cast exp typ
+    | Match(t, c)         -> str ^ matches t c
     | _                   -> raise Type_mismatch
 
 and eval1 exp =
@@ -189,6 +191,28 @@ and cast exp typ =
         | _,        _        -> raise Invalid_cast
       end
     | _        -> raise Invalid_cast
+
+and matches t c =
+  let rec pattern p t =
+    match p, t with
+      | Any :: [], _ ->
+        "true"
+      | Any :: pr, th :: tr ->
+        "true && " ^ pattern pr tr 
+      | ph :: [], th :: [] ->
+        eval1 ph ^ " == " ^ eval1 th
+      | ph :: pr, th :: tr ->
+        eval1 ph ^ " == " ^ eval1 th ^ " && " ^ pattern pr tr
+      | _                  -> ""
+  in
+  match c with
+    | ch :: cr ->
+      begin match ch with
+        | Pattern(p, e) -> 
+          pattern p t ^ " ? " ^ eval1 e ^ " : " ^ matches t cr
+      end
+    | ch      ->
+      quote "Non-exhaustive pattern"
 
 let prelude =
   let path = Filename.concat
