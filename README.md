@@ -1,16 +1,16 @@
 Primer
 ======
-Primer is my hobby programming language. In bullet points it is:
+Primer is my hobby programming language. If you have any questions about Primer then please send me an [email](mailto:philip.armitage@gmail.com).
 
+Primer in bullet points
+-----------------------
 - dynamically typed
 - immutable
-- strict evaluation
+- strict
 - higher order functions and closures
 - batch interpreter, REPL and compiler
 - builds on Linux, Mac and Windows
 - MIT licensed
-
-If you have any questions about Primer then please feel free to [email](mailto:philip.armitage@gmail.com) me.
 
 Download and install
 --------------------
@@ -26,11 +26,11 @@ Inside the tarball you'll find the following:
 - README.md  - this file
 - LICENSE    - the MIT license
 
-To install: unpack the tarball, build using make and set the environment variable `PRIMER_LIBRARY_PATH` to point to the `lib` directory.
+To get started: install OCaml, build using make and set the environment variable `PRIMER_LIBRARY_PATH` to point to the `lib` directory.
 
 Hello, World!
 -------------
-The canonical first program is just a literal string in Primer. Rather than resorting to the usual `fac` or `fib`, I'll instead follow Haskell's lead and use Quicksort:
+I've chosen Quicksort as Primer's "Hello, World!":
 
     val sort = fun xs ->
        let lt = fun a -> a < head(xs)
@@ -40,7 +40,7 @@ The canonical first program is just a literal string in Primer. Rather than reso
                              ++ sort(filter(gte, tail(xs)))
           else [] ;
 
-Note that this version of Quicksort is easy to read but isn't tail-recursive. The Primer standard library has a version implemented using CPS.
+Note that this version of Quicksort is easy to read but isn't tail-recursive. The version in the standard library is implemented using CPS.
 
 Quick start
 -----------
@@ -115,22 +115,20 @@ Strings are just lists of characters.
     head("hello");
     "hello" ! 3;
 
-The type of a value can be tested with the __is__ operator.
-
-    123.45 is string;                       # false
-    pi is float;                            # true
-
-The __as__ operator converts between types.
-
-    123.45 as string;                       # "123.45"
-    "123.45" as float;                      # 123.45
-
-The __if__ statement is an expression (so the __else__ branch is mandatory).
+Because __if__ is an expression, the __else__ branch is mandatory.
 
     val count = fn (xs)
        if xs != []
        then 1 + count(tail(xs))
        else 0;
+
+The __match__ expression supports very limited patterns but may be extended in the future.
+
+    match x, y
+      with 1, 2 then "one and two"
+      with 2, 3 then "two and three"
+      with 3, _ then "three and anything"
+      with _, _ then "anything and anything";
 
 Tail-recursive functions are optimised as in this accumulator version of count.
 
@@ -141,9 +139,19 @@ Tail-recursive functions are optimised as in this accumulator version of count.
           else a
        in counter(0, xs);
 
+The type of a value can be tested with the __is__ operator.
+
+    123.45 is string;                       # false
+    pi is float;                            # true
+
+The __as__ operator converts between types.
+
+    123.45 as string;                       # "123.45"
+    "123.45" as float;                      # 123.45
+
 Standard Library
 ----------------
-Primer has a modest standard library which can be found in __lib.pri__.
+Primer's modest standard library can be found in __lib.pri__.
 
 __map__ applies a function to every element in a list.
 
@@ -293,12 +301,10 @@ Emacs users will find the beginnings of a major mode in the `emacs` directory of
 
 To-do
 -----
-1. Add the match statement from the original C implementation.
+1. Add proper library loading from the original C implementation.
 
-2. Add proper library loading from the original C implementation.
+2. Add the let* block from the original C implementation.
 
-3. Add the let* block from the original C implementation.
+3. Optional static typing.
 
-4. Complete the JavaScript compiler.
-
-5. A native code compiler (either via C or LLVM).
+4. A native code compiler (either via C or LLVM).
