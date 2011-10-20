@@ -42,8 +42,8 @@ I've chosen Quicksort as Primer's "Hello, World!":
 
 Note that this version of Quicksort is easy to read but isn't tail-recursive. The version in the standard library is implemented using CPS.
 
-Quick start
------------
+Interpreter and compiler
+------------------------
 The quickest way to get started is at the REPL:
 
     ./pri
@@ -56,17 +56,33 @@ To compile to JavaScript:
 
     ./prc MyFile.pri MyFile.js
 
-To compile to JavaScript embedded in a HTML file:
+To compile to JavaScript embedded inside a HTML file:
 
     ./prc MyFile.pri MyFile.html
 
-Not all language features supported by the interpreter are currently implemented in the compiler.
+Types
+-----
+Primer is (currently) dynamically typed and provides int, float, char, bool, string and list types.
 
-Language reference
-------------------
+The type of a value can be tested with the __is__ operator.
+
+    123.45 is string;                       # false
+    pi is float;                            # true
+
+The __as__ operator converts between types.
+
+    123.45 as string;                       # "123.45"
+    "123.45" as float;                      # 123.45
+
+Definitions and functions
+-------------------------
 Bindings are introduced with __val__ and are immutable.
 
     val pi = 3.14159;
+
+The __let__ keyword introduces local definitions.
+
+    let x = 12 in x + 4;
 
 The body of a function is a single expression, the value of which is the return value.
 
@@ -83,10 +99,17 @@ Primer supports closures (which are also immutable).
     val add2 = MakeAdder(2);
     add2(2);                                # 4
 
-The __let__ keyword introduces local definitions.
+Tail-recursive functions are optimised as in this accumulator version of count.
 
-    let x = 12 in x + 4;
+    val count = fn (xs)
+       let counter = fn (a, xs)
+          if xs != []
+          then counter(a + 1, tail(xs))
+          else a
+       in counter(0, xs);
 
+Lists and Strings
+-----------------
 Lists can be nested and are heterogeneous.
 
     val xs = [4, [5.32, [pi], [], true], AreaOfCircle, 'a', "aaa"];
@@ -115,6 +138,8 @@ Strings are just lists of characters.
     head("hello");
     "hello" ! 3;
 
+Conditionals
+------------
 Because __if__ is an expression, the __else__ branch is mandatory.
 
     val count = fn (xs)
@@ -130,28 +155,33 @@ The __match__ expression supports very limited patterns but may be extended in t
       with 3, _ then "three and anything"
       with _, _ then "anything and anything";
 
-Tail-recursive functions are optimised as in this accumulator version of count.
+Sequencing
+----------
+Although Primer is primarily a functional language, it permits simple imperative programming by sequencing expressions in a `begin`...`end` block.
 
-    val count = fn (xs)
-       let counter = fn (a, xs)
-          if xs != []
-          then counter(a + 1, tail(xs))
-          else a
-       in counter(0, xs);
+    begin
+       show(1);
+       show(2);
+       show(3);
+    end;
 
-The type of a value can be tested with the __is__ operator.
+Each expression is evaluated in turn and the value of the block is the value of the last expression. Blocks are typically used for sequencing output operations although unlike monadic IO in Haskell, they have no special meaning in the type system.
 
-    123.45 is string;                       # false
-    pi is float;                            # true
+Libraries
+---------
+You can group related definitions into a library file under your `lib` directory. Libraries are loaded with the __using__ keyword.
 
-The __as__ operator converts between types.
+    using "mylib";                          # loads mylib.pri
 
-    123.45 as string;                       # "123.45"
-    "123.45" as float;                      # 123.45
+Note that when a library is loaded, definitions at the top level are interned but other expressions are ignored.
 
 Standard Library
 ----------------
-Primer's modest standard library can be found in __lib.pri__.
+Primer's modest standard library can be found in __base.pri__ and loaded with:
+
+    using "base";
+
+The standard library contains a small selection of useful functions:
 
 __map__ applies a function to every element in a list.
 
@@ -301,10 +331,8 @@ Emacs users will find the beginnings of a major mode in the `emacs` directory of
 
 To-do
 -----
-1. Add proper library loading from the original C implementation.
+1. Add the let*-like block from the original C implementation.
 
-2. Add the let* block from the original C implementation.
+2. Type checker with sum and product types.
 
-3. Optional static typing.
-
-4. A native code compiler (either via C or LLVM).
+3. A native code compiler (either via C or LLVM).
