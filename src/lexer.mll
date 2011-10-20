@@ -64,6 +64,7 @@ rule token = parse
   | "show"                        { SHOW }
   | "rnd"                         { RND }
   | "length"                      { LENGTH }
+  | "using"                       { USING }
   | '#' any* '\n'?                { token lexbuf }
   | ''' any ''' as lxm            { CHAR(String.get lxm 1) }
   | '"' string '"' as lxm         { STRING(String.sub lxm 1 (String.length lxm - 2)) }

@@ -50,13 +50,13 @@ let read_file_as_string path =
   close_in chan;
   (str)
 
-let missing_base_library =
-  "Unable to load base library. Ensure PRIMER_LIBRARY_PATH is set."
-
 let base_library_directory =
   try
     Sys.getenv "PRIMER_LIBRARY_PATH"
   with
-    | Sys_error _ -> error missing_base_library; exit 0
+    | Sys_error _ -> error "PRIMER_LIBRARY_PATH not set"; exit 0
 
 let base_library = Filename.concat base_library_directory "lib.pri"
+
+let library_path file =
+  Filename.concat base_library_directory file ^ ".pri"

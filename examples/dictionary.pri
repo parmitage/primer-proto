@@ -1,3 +1,5 @@
+using "base";
+
 val add = fun d k v -> d ++ [[k, v]];
 
 val get = fun d k ->

@@ -1,10 +1,5 @@
 val empty = fun xs -> head(xs) == [] ;
 
-val assert = fun id act exp ->
-   if act == exp
-   then "  PASS: " ++ id
-   else "* FAIL: " ++ id;
-
 val map = fun f xs ->
    let inner = fun xs ac ->
       if head(xs) != []

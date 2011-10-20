@@ -8,7 +8,7 @@
 %token <string> SYMBOL STRING
 %token PLUS MINUS TIMES DIV
 %token LPAREN RPAREN LSQUARE RSQUARE COMMA SEMICOLON
-%token DEF DEFINED LAMBDA LET VAL IN IF THEN ELSE APPLY MATCH WITH BEGIN END
+%token DEF DEFINED LAMBDA LET VAL IN IF THEN ELSE APPLY MATCH WITH BEGIN END USING
 %token LT GT GE LE NE EQ NOT AND OR MOD APPEND TRUE FALSE ANY END LIST
 %token HEAD TAIL SHOW RND IS AS LENGTH AT CONS RANGE
 %token B_AND B_OR B_XOR B_NOT B_LSHIFT B_RSHIFT
@@ -16,7 +16,7 @@
 
 %nonassoc ELSE
 %left IN
-%left LET DEF DEFINED LPAREN RPAREN NOT B_NOT
+%left LET DEF DEFINED LPAREN RPAREN NOT B_NOT USING
 %left AND OR APPEND MATCH WITH THEN
 %left LT GT GE LE EQ NE RANGE
 %left PLUS MINUS
@@ -84,6 +84,7 @@ expr:
   | MINUS expr %prec UMINUS                             { UniOp(Neg, $2) }
   | LSQUARE list RSQUARE                                { List $2 }
   | MATCH list pattern_block                            { Match($2, $3) }
+  | USING expr                                          { Using $2 }
 ;
 
 identifier:
@@ -111,6 +112,6 @@ pattern:
 ;
 
 seq:
-  expr                                                  { [$1] }
+  expr SEMICOLON                                        { [$1] }
   | expr SEMICOLON seq                                  { $1 :: $3 }
 ;

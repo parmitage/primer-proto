@@ -1,3 +1,5 @@
+using "base";
+
 ##############################################################################
 # A robotic rover is to be landed by NASA on a rectangular plateau of Mars.
 # The rover must navigate the plateau using a set of commands sent from Earth.

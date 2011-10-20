@@ -1,3 +1,6 @@
+using "base";
+using "test";
+
 ##############################################################################
 #
 # This is the Primer test suite which should ultimately give 100% coverage of

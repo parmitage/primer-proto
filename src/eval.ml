@@ -241,7 +241,6 @@ let rec eval exp env =
     | If _               -> condition exp env
     | Let(s, e1, e2)     -> plet s e1 e2 env
     | Lambda(p, b)       -> Closure(p, b, env)
-    | Def(_, e)          -> eval e env
     | Apply(s, a)        -> apply (eval s env) (evlis a env) env
     | UniOp(o, arg)      -> unary_op o (eval arg env)
     | BinOp(o, lhs, rhs) -> binary_op o (eval lhs env) (eval rhs env)
@@ -256,6 +255,8 @@ let rec eval exp env =
     | Cast(f, t)         -> cast (eval f env) (eval t env)
     | Seq exps           -> seq exps env
     | Match(t, c)        -> matches t c env
+    | Def(_, e)          -> raise Internal_error (* handled by reader *)
+    | Using s            -> raise Internal_error (* handled by reader *)
       
 and apply f args env =
   match f with
@@ -277,8 +278,7 @@ and condition exp env =
       end
     | _ -> raise Type_mismatch
 
-(* TODO handle Inexhaustive_pattern *)
-(* TODO any value *)
+(* TODO handle Inexhaustive_pattern somewhere *)
 and matches t c env =
   let test_results = evlis t env in
   match c with
@@ -305,3 +305,50 @@ let initial_toplevel env =
     Def(Symbol(Symtbl.intern("lambda")), Type(TLambda)) ::
     Def(Symbol(Symtbl.intern("newline")), Char('\n')) ::
     Def(Symbol(Symtbl.intern("tab")), Char('\t')) :: env    
+
+let interactive = Array.length Sys.argv == 1
+
+let lexbuf =
+  if interactive
+  then Lexing.from_channel stdin
+  else
+    try
+      Lexing.from_channel (open_in Sys.argv .(1))
+    with
+      | Sys_error _ -> error "file not found"; exit 0
+
+let rec repl env =
+  if interactive then Format.print_string "> "; Format.print_flush();
+  try
+    let result = Parser.main Lexer.token lexbuf in
+    match result with
+      | Def(s, e) -> repl (Def(s, e) :: env)
+      | Using s   -> repl (using s env)
+      | _         -> ignore (show (eval result env)); repl env
+  with
+    | Symbol_unbound      -> error "unbound symbol"; repl env
+    | Type_mismatch       -> error "type mismatch"; repl env
+    | Invalid_cast        -> error "invalid cast"; repl env
+    | Parsing.Parse_error -> error "parse error"; repl env
+    | Lexer.Eof           -> exit 0
+
+and load buf env =
+  try let result = Parser.main Lexer.token buf in
+      match result with
+        | Def(s, e) -> load buf (Def(s, e) :: env)
+        | Using s   -> load buf (using s env)
+        | _         -> load buf env
+  with Lexer.Eof    -> env
+    
+(** TODO
+    ** add using to compiler
+**)
+    
+and using str env =
+  match str with
+    | String s -> load (Lexing.from_channel (open_in (Utils.library_path s))) env
+    | _        -> raise Type_mismatch
+
+let _ =
+  Random.self_init();
+  repl (initial_toplevel []) ;;

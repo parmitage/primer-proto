@@ -39,6 +39,7 @@ type expression =
   | Type of typename
   | Seq of expression list
   | Match of expression list * pattern list
+  | Using of expression
   | Any
 and pattern =
   | Pattern of expression list * expression
