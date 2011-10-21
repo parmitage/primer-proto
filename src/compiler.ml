@@ -1,6 +1,6 @@
 open Printf
-open Type
 open Utils
+open Runtime
 
 exception Target_unknown
 exception Target_not_implemented
@@ -36,14 +36,14 @@ let check_args () =
 (** compiler backend for JavaScript 1.6 **)
 module Javascript =
 struct
-  let comma = Symtbl.intern(",")
-  let type_int = Symtbl.intern("int")
-  let type_float = Symtbl.intern("float")
-  let type_char = Symtbl.intern("char")
-  let type_bool = Symtbl.intern("bool")
-  let type_string = Symtbl.intern("string")
-  let type_list = Symtbl.intern("list")
-  let type_lambda = Symtbl.intern("lambda")
+  let comma = SymbolTable.intern(",")
+  let type_int = SymbolTable.intern("int")
+  let type_float = SymbolTable.intern("float")
+  let type_char = SymbolTable.intern("char")
+  let type_bool = SymbolTable.intern("bool")
+  let type_string = SymbolTable.intern("string")
+  let type_list = SymbolTable.intern("list")
+  let type_lambda = SymbolTable.intern("lambda")
 
   let quote str = "\"" ^ str ^ "\""
 
@@ -54,7 +54,7 @@ struct
       | Bool b   -> string_of_bool b
       | Char c   -> "\"" ^ String.make 1 c ^ "\""
       | String s -> quote s
-      | Symbol s -> Symtbl.lookup_sym s
+      | Symbol s -> SymbolTable.lookup_sym s
       | Any      -> "true"
       | _        -> raise Type_mismatch
 
@@ -199,7 +199,7 @@ struct
     let js_type_name =
       match typ with
         | Symbol s     ->
-          begin match (Symtbl.lookup_sym s) with
+          begin match (SymbolTable.lookup_sym s) with
             | "int"  | "float"  -> quote "number"
             | "char" | "string" -> quote "string"
             | "bool"            -> quote "boolean"
@@ -213,7 +213,7 @@ struct
   and cast exp typ =
     match typ with
       | Symbol s ->
-        begin match exp, (Symtbl.lookup_sym s) with
+        begin match exp, (SymbolTable.lookup_sym s) with
           | _,        "string" -> "String(" ^ eval1 exp ^ ")"
           | _,        "bool"   -> "Boolean(" ^ eval1 exp ^ ")"
           | Char _,   "int"    -> "charCode(" ^ eval1 exp ^ ")"

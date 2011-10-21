@@ -1,5 +1,5 @@
-open Type
 open Utils
+open Runtime
 
 let error msg = Format.printf "@[error: %s@]@." msg
 
@@ -296,15 +296,15 @@ and seq exps env =
     | _     -> List []
       
 let initial_toplevel env = 
-  Def(Symbol(Symtbl.intern("int")), Type(TInt)) ::
-    Def(Symbol(Symtbl.intern("float")), Type(TFloat)) ::
-    Def(Symbol(Symtbl.intern("char")), Type(TChar)) ::
-    Def(Symbol(Symtbl.intern("bool")), Type(TBool)) ::
-    Def(Symbol(Symtbl.intern("string")), Type(TString)) ::
-    Def(Symbol(Symtbl.intern("list")), Type(TList)) ::
-    Def(Symbol(Symtbl.intern("lambda")), Type(TLambda)) ::
-    Def(Symbol(Symtbl.intern("newline")), Char('\n')) ::
-    Def(Symbol(Symtbl.intern("tab")), Char('\t')) :: env    
+  Def(Symbol(SymbolTable.intern("int")), Type(TInt)) ::
+    Def(Symbol(SymbolTable.intern("float")), Type(TFloat)) ::
+    Def(Symbol(SymbolTable.intern("char")), Type(TChar)) ::
+    Def(Symbol(SymbolTable.intern("bool")), Type(TBool)) ::
+    Def(Symbol(SymbolTable.intern("string")), Type(TString)) ::
+    Def(Symbol(SymbolTable.intern("list")), Type(TList)) ::
+    Def(Symbol(SymbolTable.intern("lambda")), Type(TLambda)) ::
+    Def(Symbol(SymbolTable.intern("newline")), Char('\n')) ::
+    Def(Symbol(SymbolTable.intern("tab")), Char('\t')) :: env    
 
 let interactive = Array.length Sys.argv == 1
 

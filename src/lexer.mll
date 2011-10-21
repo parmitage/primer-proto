@@ -1,5 +1,5 @@
 {
-  open Type
+  open Runtime
   open Parser
   exception Eof
 }
