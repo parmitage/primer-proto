@@ -100,3 +100,18 @@ struct
 
   let lookup_sym sym = Hashtbl.find stringtab sym
 end
+
+module LibraryCache =
+struct
+  let cache : (string, int) Hashtbl.t = Hashtbl.create 10
+
+  let cached name =
+    if not (Hashtbl.mem cache name)
+    then
+      begin
+        Hashtbl.add cache name 0;
+        false;
+      end
+    else true
+    
+end

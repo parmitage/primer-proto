@@ -274,7 +274,11 @@ struct
 
   and using str chan =
     match str with
-      | String s -> compile_file chan (lexbuf (Utils.library_path s))
+      | String s -> 
+        begin match LibraryCache.cached s with
+          | true  -> ()
+          | false -> compile_file chan (lexbuf (Utils.library_path s))
+        end
       | _        -> raise Type_mismatch
 
 end

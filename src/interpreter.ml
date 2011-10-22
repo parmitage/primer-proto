@@ -340,13 +340,13 @@ and load buf env =
         | _         -> load buf env
   with Lexer.Eof    -> env
     
-(** TODO
-    ** add using to compiler
-**)
-    
 and using str env =
   match str with
-    | String s -> load (Lexing.from_channel (open_in (Utils.library_path s))) env
+    | String s ->
+      begin match LibraryCache.cached s with
+        | true  -> env
+        | false -> load (Lexing.from_channel (open_in (Utils.library_path s))) env
+      end
     | _        -> raise Type_mismatch
 
 let _ =
