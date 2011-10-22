@@ -26,21 +26,21 @@ Inside the tarball you'll find the following:
 - README.md  - this file
 - LICENSE    - the MIT license
 
-To get started: install OCaml, build using make and set the environment variable `PRIMER_LIBRARY_PATH` to point to the `lib` directory.
+To get started you must install OCaml (at least version 3.11) as well as GNU Make. The makefile builds across Linux, Mac and Windows without the use of autotools so there is no separate configure step. Once Primer has built, set the environment variable __PRIMER_LIBRARY_PATH__ to point to the __lib__ directory on your computer.
 
 Hello, World!
 -------------
-I've chosen Quicksort as Primer's "Hello, World!":
+I've chosen Quicksort as Primer's "Hello, World!" example:
 
     val sort = fun xs ->
-       let lt = fun a -> a < head(xs)
+       let lt  = fun a -> a < head(xs)
            gte = fun a -> a >= head(xs)
        in if head(xs) != [] then
              sort(filter(lt, tail(xs))) ++ [head(xs)]
                              ++ sort(filter(gte, tail(xs)))
-          else [] ;
+          else [];
 
-Note that this version of Quicksort is easy to read but isn't tail-recursive. The version in the standard library is implemented using CPS.
+Note that while this version of Quicksort is easy to read, it isn't tail-recursive. The version in the standard library is implemented using CPS so is suitable for use on longer lists.
 
 Interpreter and compiler
 ------------------------
@@ -50,19 +50,19 @@ The quickest way to get started is at the REPL:
 
 Alternatively, to load an existing Primer source file, simply pass it as an argument:
 
-    ./pri MyFile.pri
+    ./pri file.pri
 
 To compile to JavaScript:
 
-    ./prc MyFile.pri MyFile.js
+    ./prc file.pri file.js
 
 To compile to JavaScript embedded inside a HTML file:
 
-    ./prc MyFile.pri MyFile.html
+    ./prc file.pri file.html
 
 Types
 -----
-Primer is (currently) dynamically typed and provides int, float, char, bool, string and list types.
+Primer is (currently) dynamically typed and provides int, float, char, bool, string and list types. There is no concept of null in Primer.
 
 The type of a value can be tested with the __is__ operator.
 
@@ -99,7 +99,7 @@ Primer supports closures (which are also immutable).
     val add2 = MakeAdder(2);
     add2(2);                                # 4
 
-Tail-recursive functions are optimised as in this accumulator version of count.
+Tail-recursive functions are optimised. This function counts the number of elements in a list using an accumulator to avoid a stack overflow.
 
     val count = fn (xs)
        let counter = fn (a, xs)
@@ -133,21 +133,21 @@ To concatenate two lists use the __append__ operator.
 
     [1,2,3] ++ [4,5,6];
 
-Strings are just lists of characters.
+Strings are just lists of characters so many list operations and functions will work with them.
 
     head("hello");
     "hello" ! 3;
 
 Conditionals
 ------------
-Because __if__ is an expression, the __else__ branch is mandatory.
+Because __if__ is an expression, and so must return a value, the __else__ branch is mandatory.
 
     val count = fn (xs)
        if xs != []
        then 1 + count(tail(xs))
        else 0;
 
-The __match__ expression supports very limited patterns but may be extended in the future.
+The if expression can be nested although for case analysis, the __match__ expression may be used. It supports very limited patterns but these may be extended in the future. The underscore matches any expression.
 
     match x, y
       with 1, 2 then "one and two"
@@ -157,7 +157,7 @@ The __match__ expression supports very limited patterns but may be extended in t
 
 Sequencing
 ----------
-Although Primer is primarily a functional language, it permits simple imperative programming by sequencing expressions in a `begin`...`end` block.
+Although Primer is broadly speaking a functional programming language, it permits simple imperative programming by sequencing expressions in a __begin__...__end__ block.
 
     begin
        show(1);
@@ -169,7 +169,7 @@ Each expression is evaluated in turn and the value of the block is the value of 
 
 Libraries
 ---------
-You can group related definitions into a library file under your `lib` directory. Libraries are loaded with the __using__ keyword.
+You can group related definitions into a library file under your __lib__ directory. Libraries are loaded with the __using__ keyword.
 
     using "mylib";                          # loads mylib.pri
 
@@ -181,7 +181,7 @@ Primer's modest standard library can be found in __base.pri__ and loaded with:
 
     using "base";
 
-The standard library contains a small selection of useful functions:
+It contains a small selection of useful functions:
 
 __map__ applies a function to every element in a list.
 
@@ -314,20 +314,24 @@ __bitSet__ tests if a single bit is set in a byte.
 
 Example programs
 ----------------
-The `examples` directory contains a few simple programs:
+The __examples__ directory contains a few simple programs:
 
-- dictionary.pri         - an inefficient dictionary
-- euler.pri              - Project Euler problems
-- factorial.pri          - factorial function
-- fizzbuzz.pri           - fizzbuzz party game
-- knapsack.pri           - genetic algorithm solution to the knapsack problem
-- object.pri             - port of Oleg Kiselyov's "Purely-functional OO system"
+- dictionary.pri         - a horribly inefficient dictionary
+- euler.pri              - a few Project Euler problems
+- factorial.pri          - the factorial function
+- fizzbuzz.pri           - the fizzbuzz party game
+- knapsack.pri           - a genetic algorithm solution to the knapsack problem
+- object.pri             - a port of Oleg Kiselyov's "Purely-functional OO system"
 - rover.pri              - the Mars Rover problem
-- search.pri             - binary search
+- search.pri             - an implementation of binary search
+
+You can compile the example programs with:
+
+    make examples
 
 Editing
 -------
-Emacs users will find the beginnings of a major mode in the `emacs` directory of the source distribution.
+Emacs users will find the beginnings of a major mode in the __emacs__ directory of the source distribution. It currently provides only syntax highlighting but may be extended to support automatic indentation as well as integration with Primer's REPL and compiler.
 
 To-do
 -----
