@@ -111,6 +111,7 @@ struct
       | Rnd x               -> str ^ rnd x
       | Is(exp, typ)        -> str ^ is exp typ
       | Cast(exp, typ)      -> str ^ cast exp typ
+      | Seq exprs           -> str ^ seq exprs
       | Match(t, c)         -> str ^ matches t c
       | _                   -> raise Type_mismatch
 
@@ -126,9 +127,13 @@ struct
       ";\n   return " ^ eval1 exp2 ^ ";\n})()\n"
 
   and lambda params body =
-    "function (" ^
-      String.concat "," (Utils.map eval1 params) ^
-      ") {\n   return " ^ eval1 body ^ ";\n}"
+    "function ("
+    ^ String.concat "," (Utils.map eval1 params)
+    ^ ") {\n"
+    ^ (match body with
+      | Seq exps -> seq exps
+      | _        -> "return " ^ eval1 body)
+    ^ ";\n}"
 
   and uniop op exp =
     uniop_sym op ^ eval1 exp
@@ -225,6 +230,12 @@ struct
         end
       | _        -> raise Invalid_cast
 
+  and seq exps =
+    match exps with
+      | x::[] -> "return " ^ eval1 x ^ ";\n"
+      | x::xs -> eval1 x ^ ";\n" ^ seq xs
+      | _     -> ""
+
   and matches t c =
     let rec pattern p t =
       match p, t with
@@ -274,11 +285,7 @@ struct
 
   and using str chan =
     match str with
-      | String s -> 
-        begin match LibraryCache.cached s with
-          | true  -> ()
-          | false -> compile_file chan (lexbuf (Utils.library_path s))
-        end
+      | String s -> compile_file chan (lexbuf (Utils.library_path s))
       | _        -> raise Type_mismatch
 
 end
