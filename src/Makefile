@@ -58,7 +58,7 @@ release:
 	ocamlopt -c parser.ml
 	ocamllex lexer.mll
 	ocamlopt -c lexer.ml
-	ocamlopt -c eval.ml
+	ocamlopt -c interpreter.ml
 	ocamlopt -c compiler.ml
 	ocamlopt -o $(bin_i) str.cmxa utils.ml runtime.ml parser.ml lexer.ml interpreter.ml
 	ocamlopt -o $(bin_c) str.cmxa utils.ml runtime.ml parser.ml lexer.ml compiler.ml

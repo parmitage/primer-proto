@@ -24,7 +24,7 @@ type expression =
   | If of expression * expression * expression
   | Let of expression * expression * expression
   | Lambda of expression list * expression
-  | Closure of expression list * expression * expression list
+  | Closure of expression list * expression * frame
   | Apply of expression * expression list
   | BinOp of binop * expression * expression
   | UniOp of uniop * expression
@@ -45,8 +45,12 @@ type expression =
   | Any
 and pattern =
   | Pattern of expression list * expression
+and frame = {
+    defs: (int, expression) Hashtbl.t;
+    parent: frame option;
+}
 
-module Environment =
+module Environment_old =
 struct
   let symbol_eq s1 s2 = match s1, s2 with
     | Symbol sym1, Symbol sym2 -> sym1 = sym2
@@ -56,8 +60,6 @@ struct
     | Def(sym2, exp) -> symbol_eq sym sym2
     | _ -> raise Type_mismatch
 
-  let symbol_bound sym env = List.exists (fun b -> definition_eq sym b) env
-
   let lookup sym env =
     try match List.find (fun b -> definition_eq sym b) env with
       | Def(s, v) -> v
@@ -65,6 +67,7 @@ struct
     with _ -> raise Symbol_unbound
 
   let bind params args env =
+    let symbol_bound sym env = List.exists (fun b -> definition_eq sym b) env in
     let bind_one sym exp env = Def(sym, exp) :: env in
     let rebind_one sym exp env =
       replace_one_by definition_eq sym (Def(sym, exp)) env in
@@ -74,6 +77,43 @@ struct
         then rebind_one sym exp e
         else bind_one sym exp e)
       env (zip params args)
+end
+
+module Environment =
+struct
+  
+  let top = { defs = Hashtbl.create 100; parent = None; }
+
+  let create parent =
+    { defs = Hashtbl.create 20; parent = Some(parent); }
+
+  let get_key sym =
+    match sym with
+      | Symbol i -> i
+      | _        -> raise Type_mismatch
+
+  let rec lookup sym env =
+    let key = get_key sym in
+    let rec inner key env =
+      try
+        Hashtbl.find env.defs key        
+      with Not_found ->
+        match env.parent with
+          | Some f -> inner key f
+          | None -> raise Symbol_unbound
+    in inner key env
+    
+  let bind1 symbol value env =
+    Hashtbl.add env.defs (get_key symbol) value;
+    env
+
+  let bind params args env =
+    Utils.iter2
+      (fun sym exp ->
+        Hashtbl.add env.defs (get_key sym) exp)
+      params args;
+    env
+
 end
 
 module SymbolTable =

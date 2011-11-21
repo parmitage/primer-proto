@@ -260,7 +260,7 @@ let rec eval exp env =
       
 and apply f args env =
   match f with
-    | Closure(p, b, ce) -> eval b (Environment.bind p args ce)
+    | Closure(p, b, ce) -> eval b (Environment.bind p args (Environment.create ce))
     | _                 -> raise Type_mismatch
 
 and evlis lst env =
@@ -295,16 +295,16 @@ and seq exps env =
     | x::xs -> ignore (eval x env); seq xs env
     | _     -> List []
       
-let initial_toplevel env = 
-  Def(Symbol(SymbolTable.intern("int")), Type(TInt)) ::
-    Def(Symbol(SymbolTable.intern("float")), Type(TFloat)) ::
-    Def(Symbol(SymbolTable.intern("char")), Type(TChar)) ::
-    Def(Symbol(SymbolTable.intern("bool")), Type(TBool)) ::
-    Def(Symbol(SymbolTable.intern("string")), Type(TString)) ::
-    Def(Symbol(SymbolTable.intern("list")), Type(TList)) ::
-    Def(Symbol(SymbolTable.intern("lambda")), Type(TLambda)) ::
-    Def(Symbol(SymbolTable.intern("newline")), Char('\n')) ::
-    Def(Symbol(SymbolTable.intern("tab")), Char('\t')) :: env    
+(* let initial_toplevel env = *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("int")) Type(TInt) env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("float")) Type(TFloat) env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("char")) Type(TChar) env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("bool")) Type(TBool) env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("string")) Type(TString) env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("list")) Type(TList) env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("lambda")) Type(TLambda) env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("newline")) Char('\n') env; *)
+(*   Environment.bind1 Symbol(SymbolTable.intern("tab")) Char('\t') env *)
 
 let interactive = Array.length Sys.argv == 1
 
@@ -322,7 +322,7 @@ let rec repl env =
   try
     let result = Parser.main Lexer.token lexbuf in
     match result with
-      | Def(s, e) -> repl (Def(s, e) :: env)
+      | Def(s, e) -> repl (Environment.bind1 s e env)
       | Using s   -> repl (using s env)
       | _         -> ignore (show (eval result env)); repl env
   with
@@ -335,7 +335,7 @@ let rec repl env =
 and load buf env =
   try let result = Parser.main Lexer.token buf in
       match result with
-        | Def(s, e) -> load buf (Def(s, e) :: env)
+        | Def(s, e) -> load buf (Environment.bind1 s e env)
         | Using s   -> load buf (using s env)
         | _         -> load buf env
   with Lexer.Eof    -> env
@@ -351,4 +351,4 @@ and using str env =
 
 let _ =
   Random.self_init();
-  repl (initial_toplevel []) ;;
+  repl (Environment.top) ;;
